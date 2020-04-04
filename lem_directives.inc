@@ -15,12 +15,12 @@
   #2: release / debug options
 -------------------------------------------------------------------------------}
 {$if not defined(debug)}
-  {$inline auto}
+  //{$inline auto} // "Error: Wrong switch toggle, use ON/OFF or +/-"
   {$optimization on}
   {$debuginfo off}
   {$stackframes off}
   {$assertions off}
-  {$referenceinfo off}
+  //{$referenceinfo off} // Warning: Unsupported switch "$Y"
 {$elseif defined(debug)}
   {.$define fastdebug}          // useful for debugging/checking optimizations with CPU registers, compiled code etc. it is almost like release
   {$if defined(fastdebug)}

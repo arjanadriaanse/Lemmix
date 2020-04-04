@@ -1,0 +1,11 @@
+Lemmix.lpr Note: Repairing include files : lem_directives.inc; lem_resources.inc
+Lemmix.lpi Note: Added defines -dBorland -dVer150 -dDelphi7 -dCompiler6_Up -dPUREPASCAL in custom options
+ Progress: Found all unit files
+ : 
+ : *** Converting unit files belonging to project/package ***
+Base.Bitmaps.pas Note: Repairing include files : lem_directives.inc
+ : 
+ Error: Exception happened during unit conversion. Continuing with form files of already converted units...
+ : 
+ : *** Fixing used units and Repairing form files ***
+ Fatal: Conversion Aborted.
