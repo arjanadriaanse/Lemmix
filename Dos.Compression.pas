@@ -12,8 +12,7 @@ unit Dos.Compression;
 interface
 
 uses
-  System.Classes, System.SysUtils, System.Math, System.Contnrs,
-  Base.Utils;
+  Classes, SysUtils, Math, Contnrs, Generics.Collections;
 
 type
   TRawBytes = array[0..MaxInt div 16 - 1] of Byte;
@@ -59,7 +58,7 @@ type
     property DecompressedData  : TMemoryStream read fDecompressedData;
   end;
 
-  TDosDatSectionList = class(TFastObjectList<TDosDatSection>);
+  TDosDatSectionList = class(TObjectList<TDosDatSection>);
 
 type
   TDosDatDecompressor = class
@@ -405,9 +404,9 @@ end;
 
 function TDosDatDecompressor.GetNumberOfSectionsOnly(const aFilename: string; out LVLCheck: Boolean): Integer;
 var
-  F: TBufferedFileStream;
+  F: TFileStream;
 begin
-  F := TBufferedFileStream.Create(aFileName, fmOpenRead);
+  F := TFileStream.Create(aFileName, fmOpenRead);
   try
     Result := GetNumberOfSectionsOnly(F, LVLCheck);
   finally
@@ -417,9 +416,9 @@ end;
 
 procedure TDosDatDecompressor.LoadSectionListFromFile(const aFileName: string; aList: TDosDatSectionList; DecompressOnTheFly: Boolean);
 var
-  F: TBufferedFileStream;
+  F: TFileStream;
 begin
-  F := TBufferedFileStream.Create(aFileName, fmOpenRead);
+  F := TFileStream.Create(aFileName, fmOpenRead);
   try
     LoadSectionList(F, aList, DecompressOnTheFly);
   finally
@@ -615,14 +614,14 @@ end;
 
 procedure TDosDatCompressor.CompressFile(const aFileName, aDstFile: string);
 var
-  F: TBufferedFileStream;
+  F: TFileStream;
   Header: TCompressionHeaderRec;
 
   procedure savetotemp;
   var
-    t: tBufferedfilestream;
+    t: TFileStream;
   begin
-    t := tBufferedfilestream.create(adstFile, fmcreate);
+    t := TFileStream.create(adstFile, fmcreate);
     try
       t.write(header, sizeof(header));
       t.write(cdata^, csize + 1);
@@ -635,7 +634,7 @@ var
   i: Integer;
 
 begin
-  F := TBufferedFileStream.Create(aFileName, fmOpenRead);
+  F := TFileStream.Create(aFileName, fmOpenRead);
   try
     FillChar(Header, SizeOf(Header), 0);
     DSize := F.Size - 1;
@@ -721,7 +720,7 @@ end;
 
 procedure TDosDatCompressor.StoreSection(aList: TDosDatSection; DstStream: TStream; CompressOnTheFly: Boolean);
 begin
-  Throw('StoreSection not implemented yet');
+  //Throw('StoreSection not implemented yet');
 end;
 
 procedure TDosDatCompressor.StoreSectionList(aList: TDosDatSectionList; DstStream: TStream; CompressOnTheFly: Boolean = True);
