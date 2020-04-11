@@ -3,14 +3,15 @@ unit Base.Utils;
 {$include lem_directives.inc}
 
 interface
+
 // Base.Utils must be without any lemmix program specific references.
 // Some globals here, som baseclasses as well, and some basic stuff.
 
 uses
   LCLIntf, LMessages,
   Types, Classes, SysUtils, TypInfo, IniFiles, Math, Contnrs, Generics.Collections,
-  Rtti, {IOUtils,}
-  Forms,
+  Rtti, //System.IOUtils,
+  Forms, Graphics, Controls,
   GR32, GR32_LowLevel;
 
 function InitializeLemmix: Boolean;
@@ -41,6 +42,12 @@ const
   Bit13 = 1 shl 13;  // 8192
   Bit14 = 1 shl 14;  // 16384
   Bit15 = 1 shl 15;  // 32768
+
+{
+// file stuff
+function ForceDir(const aFileName: string): Boolean;
+function GetFileSize(const aFilename: string): Int64;
+}
 
 // string stuff
 function LeadZeroStr(const i, zeros: Integer): string; inline;
@@ -78,6 +85,7 @@ procedure ClearLog;
 function GetAppVersionString(out major, minor, release, build: Integer): string;
 
 // timing stuff
+//function QueryTimer: Int64; overload; inline;
 function MSBetween(const T1, T2: Int64): Int64; inline;
 
 // simple timer mechanism
@@ -136,6 +144,7 @@ type
     property BoundsRect: TRect read fBoundsRect;
   end;
 
+
 type
   Enum<T> = class sealed
   public
@@ -143,27 +152,27 @@ type
     class function AsString(const aValue: T): string; static; inline;
   end;
 
-  //TFastObjectList<T: class> = class(TObjectList<T>);
-
-  //TFastObjectList<T: class> = class;
+  {
+  TFastObjectList<T: class> = class;
 
   // fastest possible 'for in' loop support
   TEnumeratorForFastList<T: class> = record
   private
     fIndex: Integer;
-    fList: TObjectList<T>;
+    fList: TFastObjectList<T>;
   public
     function MoveNext: Boolean; inline;
     function GetCurrent: T; inline;
     property Current: T read GetCurrent;
   end;
+  }
 
   // fast typed object list
   TFastObjectList<T: class> = class(TObjectList<T>)
   strict private
   private
   public
-    function GetEnumerator: TEnumeratorForFastList<T>; inline;
+    //function GetEnumerator: TEnumeratorForFastList<T>; inline;
     function ValidIndex(ix: Integer): Boolean; inline;
     procedure CheckIndex(aIndex: Integer);
     function GetItem(aIndex: Integer): T; inline;
@@ -189,8 +198,24 @@ type
   TBitmaps = class(TFastObjectList<TBitmap32>);
 
   TBufferedFileStream = class(TFileStream);
+    
+  //TGenericStringFeedbackProc = reference to procedure(const s: string);
 
-implementation
+// lemmix messages
+const
+  LM_START   = WM_USER + 1;
+  LM_RESTART = WM_USER + 2;
+
+type
+  PLemmixMemoryMappedRecord = ^TLemmixMemoryMappedRecord;
+  TLemmixMemoryMappedRecord = packed record
+  public
+    ApplicationHandle: NativeUInt;
+    ParamChars: array[1..256] of Char;
+    procedure Clear;
+    function GetAsString: string;
+    procedure SetAsString(const s: string);
+  end;
 
 // lowlevel program globals
 var
@@ -198,9 +223,11 @@ var
   _UniqueMemoryMappedFileName: string = 'Lemmix-1965-05-21-memfile';
   _Mutex: THandle; // lemmix can only have 1 instance
   _Freq: Int64; // for timer
-//  _MemoryMappedFileHandle: THandle; // for restarting lemmix with new parameter
-//  _LemmixMemoryMappedRecord: PLemmixMemoryMappedRecord; // the pointer
+  _MemoryMappedFileHandle: THandle; // for restarting lemmix with new parameter
+  _LemmixMemoryMappedRecord: PLemmixMemoryMappedRecord; // the pointer
   CurrentDisplay: TDisplayInfo; // info on monitor and currently active form
+
+implementation
 
 procedure DoThrow(const msg: string; const proc: string = '');
 // generic invalid operation exception for procedues
@@ -230,161 +257,26 @@ begin
     get_caller_frame(get_frame);
 end;
 
-{ TDisplayInfo }
-
-procedure TDisplayInfo.SetMonitorIndex(aValue: Integer);
+{
+function ForceDir(const aFileName: string): Boolean;
+// force path for filename
 var
-  monitor: TMonitor;
+  path: string;
 begin
-  if (aValue < 0) or (aValue >= Screen.MonitorCount) then
-    aValue := 0;
-  fMonitorIndex := aValue;
-  monitor := Screen.Monitors[fMonitorIndex];
-  fDpi := monitor.PixelsPerInch;
-  fDpiScale := fDpi / 96;
-  fBoundsRect := monitor.BoundsRect;
+  path := ExtractFilePath(aFileName);
+  Result := ForceDirectories(path);
 end;
 
-{ Enum }
-
-class function Enum<T>.AsString(const aValue: T): string;
-// alleen aanroepen voor enum of set met typeinfo
+function GetFileSize(const aFilename: String): Int64;
+  var
+    info: TWin32FileAttributeData;
 begin
-  Result := TValue.From<T>(aValue).ToString;
+  result := -1;
+  if not GetFileAttributesEx(PWideChar(aFileName), GetFileExInfoStandard, @info) then
+    Exit;
+  result := Int64(info.nFileSizeLow) or Int64(info.nFileSizeHigh shl 32);
 end;
-
-
-{ TEnumeratorForFastList<T> }
-
-function TEnumeratorForFastList<T>.GetCurrent: T;
-begin
-  Result := fList[fIndex];
-end;
-
-function TEnumeratorForFastList<T>.MoveNext: Boolean;
-begin
-  Inc(fIndex);
-  Result := fIndex < fList.Count;
-end;
-
-{ TFastObjectList<T> }
-
-function TFastObjectList<T>.ValidIndex(ix: Integer): Boolean;
-begin
-  Result := (ix >= 0) and (ix < Count);
-end;
-
-procedure TFastObjectList<T>.CheckIndex(aIndex: Integer);
-begin
-  if (aIndex < 0) or (aIndex >= Count) then begin
-    Throw('TFastObjectList (' + T.ClassName + ') index error (' + aIndex.ToString + ')');
-  end;
-end;
-
-function TFastObjectList<T>.GetItem(aIndex: Integer): T;
-begin
-  {$ifdef paranoid} CheckIndex(aIndex); {$endif}
-  Result := Self[aIndex];
-end;
-
-function TFastObjectList<T>.First: T;
-begin
-  {$ifdef paranoid} CheckIndex(0); {$endif}
-  Result := GetItem(0);
-end;
-
-function TFastObjectList<T>.Last: T;
-begin
-  {$ifdef paranoid} CheckIndex(0); {$endif}
-  Result := GetItem(Count - 1);
-end;
-
-function TFastObjectList<T>.FirstOrDefault: T;
-begin
-  if Count > 0
-  then Result := GetItem(0)
-  //else Result := nil;
-end;
-
-function TFastObjectList<T>.LastOrDefault: T;
-begin
-  if Count > 0
-  then Result := GetItem(Count - 1)
-  //else Result := nil;
-end;
-
-function TFastObjectList<T>.HasItems: Boolean;
-begin
-  Result := Count > 0;
-end;
-
-function TFastObjectList<T>.IsEmpty: Boolean;
-begin
-  Result := Count = 0;
-end;
-
-function TFastObjectList<T>.GetEnumerator: TEnumeratorForFastList<T>;
-begin
-  // we do not use a record constructor. this is faster
-  Result.fIndex := -1;
-  Result.fList := Self;
-end;
-
-function Scale(const i: Integer): Integer;
-begin
-  Result := Round(i * CurrentDisplay.DpiScale);
-end;
-
-function Scale(const r: TRect): TRect;
-begin
-  Result.Left := Scale(r.Left);
-  Result.Top := Scale(r.Top);
-  Result.Right := Scale(r.Right);
-  Result.Bottom := Scale(r.Bottom);
-end;
-
-{ TIntHelper }
-
-function TIntHelper.ToString: string;
-begin
-  Result := IntToStr(Self);
-end;
-
-function TIntHelper.Scale: Integer;
-begin
-  Result := Base.utils.Scale(Self);
-end;
-
-{ TStringArrayHelper }
-
-function TStringArrayHelper.IndexOf(const s: string): Integer;
-var
-  ix: Integer;
-  var tmp: string;
-begin
-  ix := 0;
-  for tmp in Self do begin
-    if s = tmp then
-      Exit(ix);
-    Inc(ix);
-  end;
-  Result := -1;
-end;
-
-function TStringArrayHelper.Contains(const s: string): Boolean;
-begin
-  Result := IndexOf(s) >= 0;
-end;
-
-function TStringArrayHelper.Length: Integer;
-begin
-  Result := System.Length(Self);
-end;
-
-procedure TStringArrayHelper.Sort;
-begin
-  Self.Sort();
-end;
+}
 
 function LeadZeroStr(const i, zeros: Integer): string; inline;
 begin
@@ -487,8 +379,7 @@ end;
 
 function BytesToHex(const bytes: TBytes): string;
 var
-  ix: Integer;
-  i: Integer;
+  ix, i: Integer;
   h: string;
 begin
   SetLength(Result, Length(Bytes) * 2);
@@ -542,14 +433,48 @@ end;
 {$endif debug}
 
 function GetAppVersionString(out major, minor, release, build: Integer): string;
+{
+var
+  Exe: string;
+  Size, Handle: DWORD;
+  Buffer: TBytes;
+  FixedPtr: PVSFixedFileInfo;
+}
 begin
+  Result := '?';
+
   major := 0;
   minor := 0;
   release := 0;
   build := 0;
 
+  {
+  Exe := ParamStr(0);
+
+  Size := GetFileVersionInfoSize(PChar(Exe), Handle);
+  if Size = 0 then
+    Exit;
+  SetLength(Buffer, Size);
+  if not GetFileVersionInfo(PChar(Exe), Handle, Size, Buffer) then
+    Exit;
+  if not VerQueryValue(Buffer, '\', Pointer(FixedPtr), Size) then
+    Exit;
+
+  major := LongRec(FixedPtr.dwFileVersionMS).Hi;
+  minor := LongRec(FixedPtr.dwFileVersionMS).Lo;
+  release := LongRec(FixedPtr.dwFileVersionLS).Hi;
+  build := LongRec(FixedPtr.dwFileVersionLS).Lo;
+  }
+
   Result := Format('%d.%d.%d', [major, minor, release]);
 end;
+
+{
+function QueryTimer: Int64;
+begin
+  QueryPerformanceCounter(Result);
+end;
+}
 
 function MSBetween(const T1, T2: Int64): Int64;
 // returns the difference in milliseconds between 2 values, calculated with QueryTimer
@@ -573,15 +498,277 @@ begin
   Result := (aCurrentTick > fLastTick) and (Trunc(1000 * ((aCurrentTick - fLastTick) / _Freq)) >= fInterval);
 end;
 
+{ TDisplayInfo }
+
+procedure TDisplayInfo.SetMonitorIndex(aValue: Integer);
+var
+  monitor: TMonitor;
+begin
+  if (aValue < 0) or (aValue >= Screen.MonitorCount) then
+    aValue := 0;
+  fMonitorIndex := aValue;
+  monitor := Screen.Monitors[fMonitorIndex];
+  fDpi := monitor.PixelsPerInch;
+  fDpiScale := fDpi / 96;
+  fBoundsRect := monitor.BoundsRect;
+end;
+
+{ Enum }
+
+class function Enum<T>.AsString(const aValue: T): string;
+// alleen aanroepen voor enum of set met typeinfo
+begin
+  Result := TValue.From<T>(aValue).ToString;
+end;
+
+{ TEnumeratorForFastList<T> }
+{
+function TEnumeratorForFastList<T>.GetCurrent: T;
+begin
+  Result := fList.List[fIndex];
+end;
+
+function TEnumeratorForFastList<T>.MoveNext: Boolean;
+begin
+  Inc(fIndex);
+  Result := fIndex < fList.Count;
+end;
+}
+
+{ TFastObjectList<T> }
+
+function TFastObjectList<T>.ValidIndex(ix: Integer): Boolean;
+begin
+  Result := (ix >= 0) and (ix < Count);
+end;
+
+procedure TFastObjectList<T>.CheckIndex(aIndex: Integer);
+begin
+  if (aIndex < 0) or (aIndex >= Count) then begin
+    Throw('TFastObjectList (' + T.ClassName + ') index error (' + aIndex.ToString + ')');
+  end;
+end;
+
+function TFastObjectList<T>.GetItem(aIndex: Integer): T;
+begin
+  {$ifdef paranoid} CheckIndex(aIndex); {$endif}
+  Result := Self[aIndex];
+end;
+
+function TFastObjectList<T>.First: T;
+begin
+  {$ifdef paranoid} CheckIndex(0); {$endif}
+  Result := GetItem(0);
+end;
+
+function TFastObjectList<T>.Last: T;
+begin
+  {$ifdef paranoid} CheckIndex(0); {$endif}
+  Result := GetItem(Count - 1);
+end;
+
+function TFastObjectList<T>.FirstOrDefault: T;
+begin
+  if Count > 0
+  then Result := GetItem(0)
+  //else Result := nil;
+end;
+
+function TFastObjectList<T>.LastOrDefault: T;
+begin
+  if Count > 0
+  then Result := GetItem(Count - 1)
+  //else Result := nil;
+end;
+
+function TFastObjectList<T>.HasItems: Boolean;
+begin
+  Result := Count > 0;
+end;
+
+function TFastObjectList<T>.IsEmpty: Boolean;
+begin
+  Result := Count = 0;
+end;
+
+{
+function TFastObjectList<T>.GetEnumerator: TEnumeratorForFastList<T>;
+begin
+  // we do not use a record constructor. this is faster
+  Result.fIndex := -1;
+  Result.fList := Self;
+end;
+}
+
+function Scale(const i: Integer): Integer;
+begin
+  Result := Round(i * CurrentDisplay.DpiScale);
+end;
+
+function Scale(const r: TRect): TRect;
+begin
+  Result.Left := Scale(r.Left);
+  Result.Top := Scale(r.Top);
+  Result.Right := Scale(r.Right);
+  Result.Bottom := Scale(r.Bottom);
+end;
+
+{ TIntHelper }
+
+function TIntHelper.ToString: string;
+begin
+  Result := IntToStr(Self);
+end;
+
+function TIntHelper.Scale: Integer;
+begin
+  Result := Base.utils.Scale(Self);
+end;
+
+{ TStringArrayHelper }
+
+function TStringArrayHelper.IndexOf(const s: string): Integer;
+var
+  ix: Integer;
+  tmp: string;
+begin
+  ix := 0;
+  for tmp in Self do begin
+    if s = tmp then
+      Exit(ix);
+    Inc(ix);
+  end;
+  Result := -1;
+end;
+
+function TStringArrayHelper.Contains(const s: string): Boolean;
+begin
+  Result := IndexOf(s) >= 0;
+end;
+
+function TStringArrayHelper.Length: Integer;
+begin
+  Result := System.Length(Self);
+end;
+
+procedure TStringArrayHelper.Sort;
+begin
+  Self.Sort();
+end;
+
+{ TLemmixMemoryMappedRecord }
+
+procedure TLemmixMemoryMappedRecord.Clear;
+begin
+  FillChar(Self, SizeOf(Self), 0);
+end;
+
+function TLemmixMemoryMappedRecord.GetAsString: string;
+var
+  i: Integer;
+  C: Char;
+begin
+  SetLength(Result, Length(ParamChars));
+  for i := 1 to 255 do begin
+    C := ParamChars[i];
+    if C = #0 then begin
+      SetLength(Result, i - 1);
+      Break;
+    end;
+    Result[i] := ParamChars[i];
+  end;
+end;
+
+procedure TLemmixMemoryMappedRecord.SetAsString(const s: string);
+var
+  i: Integer;
+begin
+  FillChar(ParamChars, SizeOf(ParamChars), 0);
+  for i := 1 to Copy(s, 1, 255).Length do
+    ParamChars[i] := s[i];
+end;
+
+{
+procedure TryNotifyRunningLemmixInstance;
+var
+  param: string;
+  mapHandle: THandle;
+  tempRecord: PLemmixMemoryMappedRecord;
+begin
+  param := ParamStr(1);
+  if param.Trim.IsEmpty then   begin
+    //MessageBox(GetDesktopWindow, 'Lemmix is already running', 0, MB_SYSTEMMODAL);// todo: damn this shows a second taskbar item. we ignore this for now
+    Exit;
+  end;
+
+  mapHandle := 0;
+
+  try
+    // get handle to memory mapped file
+    mapHandle := OpenFileMapping(FILE_MAP_ALL_ACCESS, false, PChar(_UniqueMemoryMappedFileName));
+    if mapHandle = 0 then
+      Exit;
+
+    tempRecord := MapViewOfFile(mapHandle, FILE_MAP_ALL_ACCESS, 0, 0, SizeOf(TLemmixMemoryMappedRecord));
+
+    if (tempRecord = nil) or (tempRecord^.ApplicationHandle = 0) then
+      Exit;
+
+    tempRecord^.SetAsString(ParamStr(1));
+
+    // send new param to existing lemmix app. the message is handled in Form.Main and will reload with this param
+    PostMessage(tempRecord^.ApplicationHandle, LM_RESTART, 0, 0);
+
+   finally
+     if mapHandle <> 0 then
+       CloseHandle(mapHandle);
+   end;
+end;
+}
+
 function InitializeLemmix: Boolean;
 begin
+  {
+  // check already running
+  var existingMutex := OpenMutex(SYNCHRONIZE, False, PChar(_UniqueName));
+  if existingMutex <> 0 then begin
+    CloseHandle(existingMutex);
+    TryNotifyRunningLemmixInstance;
+    Exit(False);
+  end;
+
+  // if not running create mutex
+  _Mutex := CreateMutex(nil, True, PChar(_UniqueName));
+  if GetLastError = ERROR_ALREADY_EXISTS then begin
+    _Mutex := 0;
+    Dlg('Failed to create mutex');
+    Exit(False);
+  end;
+
+  // if ok create memory mapped file
+  _MemoryMappedFileHandle := CreateFileMapping($FFFFFFFF, nil, PAGE_READWRITE, 0, SizeOf(TLemmixMemoryMappedRecord), PChar(_UniqueMemoryMappedFileName));
+  _LemmixMemoryMappedRecord := MapViewOfFile(_MemoryMappedFileHandle, FILE_MAP_ALL_ACCESS, 0, 0, SizeOf(TLemmixMemoryMappedRecord));
+  _LemmixMemoryMappedRecord^.Clear;
+  }
+
   Result := True;
 end;
 
+{
+procedure FinalizeLemmix;
+begin
+  if _MemoryMappedFileHandle <> 0 then
+    CloseHandle(_MemoryMappedFileHandle);
+  if _Mutex <> 0 then
+    CloseHandle(_Mutex);
+end;
+}
+
 initialization
   CurrentDisplay.fDpiScale := 1.0;
+  //QueryPerformanceFrequency(_Freq);
 //finalization
-//  FinalizeLemmix;
+  //FinalizeLemmix;
 end.
 
 
