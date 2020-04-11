@@ -298,11 +298,12 @@ end;
 function TLVLRec.GetObjectCount(out entranceCount, exitCount: Integer): Integer;
 var
   O: TLVLObject;
+  i: Integer;
 begin
   Result := 0;
   entranceCount := 0;
   exitCount := 0;
-  for var i := 0 to LVL_MAXOBJECTCOUNT - 1 do begin
+  for i := 0 to LVL_MAXOBJECTCOUNT - 1 do begin
     O := Objects[i];
     if O.AsInt64 <> 0 then begin
       Inc(Result);
@@ -317,9 +318,10 @@ end;
 function TLVLRec.GetTerrainCount: Integer;
 var
   T: TLVLTerrain;
+  i: Integer;
 begin
   Result := 0;
-  for var i := 0 to LVL_MAXTERRAINCOUNT - 1 do begin
+  for i := 0 to LVL_MAXTERRAINCOUNT - 1 do begin
     T := Terrain[i];
     if T.D0 <> $FFFFFFFF then
       Inc(Result);
@@ -329,9 +331,10 @@ end;
 function TLVLRec.GetSteelCount: Integer;
 var
   S: TLVLSteel;
+  i: Integer;
 begin
   Result := 0;
-  for var i := 0 to LVL_MAXSTEELCOUNT - 1 do begin
+  for i := 0 to LVL_MAXSTEELCOUNT - 1 do begin
     S := Steel[i];
     if S.D0 <> 0 then
       Inc(Result);

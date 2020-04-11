@@ -5,7 +5,7 @@ unit Level.Hash;
 interface
 
 uses
-  System.SysUtils, System.Hash,
+  SysUtils, MD5,
   Base.Utils,
   Dos.Structures;
 
@@ -27,10 +27,17 @@ implementation
 { TLevelHasher }
 
 class function TLevelHasher.LongHash(const LVL: TLVLRec): TBytes;
+var
+  H: TMD5Context;
+  D: TMD5Digest;
+  L: TLVLRec;
 begin
-  var H: THashMD5 := THashMD5.Create;
-  H.Update(LVL, SizeOf(LVL));
-  Result := H.HashAsBytes;
+  MD5Init(H);
+  L := LVL;
+  MD5.MD5Update(H, L, SizeOf(LVL));
+  MD5.MD5Final(H, D);
+  SetLength(Result, 16);
+  Move(D, Result[0], 16);
   {$if defined(paranoid)}
   if Length(Result) <> 16 then Throw('TLevelHasher.LongHash length error');
   {$ifend}
@@ -39,9 +46,11 @@ end;
 class function TLevelHasher.ShortHash(const LVL: TLVLRec): UInt64;
 var
   U: Int64Rec absolute Result;
+  hash: TBytes;
+  i: Integer;
 begin
-  var hash := LongHash(LVL);
-  for var i := 0 to 7 do
+  hash := LongHash(LVL);
+  for i := 0 to 7 do
     U.Bytes[i] := hash[i] xor hash[i + 8];
 end;
 
@@ -52,15 +61,16 @@ const
 var
   U: Int64Rec absolute hash;
   Sum: Integer;
+  i: Integer;
   Vowel: Boolean;
   b: Byte;
 begin
   Sum := 0;
-  for var i := 0 to 7 do
+  for i := 0 to 7 do
     Inc(Sum, Integer(U.Bytes[i]));
   Vowel := Odd(Sum);
   SetLength(Result, 10);
-  for var i := 0 to 7 do begin
+  for i := 0 to 7 do begin
     if Vowel
     then Result[i + 1] := Vowels[U.Bytes[i] mod 5]
     else Result[i + 1] := NonVowels[U.Bytes[i] mod 20];

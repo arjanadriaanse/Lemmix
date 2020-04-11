@@ -23,8 +23,24 @@ type
     class procedure Throw(const msg: string; const method: string = '');
   end;
 
-type
-  TBitmaps = class(TObjectList<TBitmap32>);
+const
+  // bitnumbers
+  Bit0  = 1;         // 1
+  Bit1  = 1 shl 1;   // 2
+  Bit2  = 1 shl 2;   // 4
+  Bit3  = 1 shl 3;   // 8
+  Bit4  = 1 shl 4;   // 16
+  Bit5  = 1 shl 5;   // 32
+  Bit6  = 1 shl 6;   // 64
+  Bit7  = 1 shl 7;   // 128
+  Bit8  = 1 shl 8;   // 256
+  Bit9  = 1 shl 9;   // 512
+  Bit10 = 1 shl 10;  // 1024
+  Bit11 = 1 shl 11;  // 2048
+  Bit12 = 1 shl 12;  // 4096
+  Bit13 = 1 shl 13;  // 8192
+  Bit14 = 1 shl 14;  // 16384
+  Bit15 = 1 shl 15;  // 32768
 
 // string stuff
 function LeadZeroStr(const i, zeros: Integer): string; inline;
@@ -79,6 +95,17 @@ type
     property Interval: Cardinal read fInterval write fInterval;
   end;
 
+// monitor and dpi stuff
+function Scale(const i: Integer): Integer; overload; inline;
+function Scale(const r: TRect): TRect; overload; inline;
+
+type
+  TIntHelper = record helper for Integer
+  public
+    function ToString: string; inline;
+    function Scale: Integer; inline;
+  end;
+
   // just useless stub interfaces to prevent circular references
   IDosForm = interface
     ['{24535447-B742-4EB2-B688-825A1AD69349}']
@@ -115,6 +142,53 @@ type
     // enum to string of set to string
     class function AsString(const aValue: T): string; static; inline;
   end;
+
+  //TFastObjectList<T: class> = class(TObjectList<T>);
+
+  //TFastObjectList<T: class> = class;
+
+  // fastest possible 'for in' loop support
+  TEnumeratorForFastList<T: class> = record
+  private
+    fIndex: Integer;
+    fList: TObjectList<T>;
+  public
+    function MoveNext: Boolean; inline;
+    function GetCurrent: T; inline;
+    property Current: T read GetCurrent;
+  end;
+
+  // fast typed object list
+  TFastObjectList<T: class> = class(TObjectList<T>)
+  strict private
+  private
+  public
+    function GetEnumerator: TEnumeratorForFastList<T>; inline;
+    function ValidIndex(ix: Integer): Boolean; inline;
+    procedure CheckIndex(aIndex: Integer);
+    function GetItem(aIndex: Integer): T; inline;
+    function First: T; inline;
+    function Last: T; inline;
+    function FirstOrDefault: T; inline;
+    function LastOrDefault: T; inline;
+    function HasItems: Boolean; inline;
+    function IsEmpty: Boolean; inline;
+    property Items[aIndex: Integer]: T read GetItem; default;
+  end;
+
+  // a very basic helper
+  TStringArray = TArray<string>;
+  TStringArrayHelper = record helper for TStringArray
+  public
+    function IndexOf(const s: string): Integer;
+    function Contains(const s: string): Boolean; inline;
+    function Length: Integer; inline;
+    procedure Sort;
+  end;
+
+  TBitmaps = class(TFastObjectList<TBitmap32>);
+
+  TBufferedFileStream = class(TFileStream);
 
 implementation
 
@@ -177,6 +251,139 @@ class function Enum<T>.AsString(const aValue: T): string;
 // alleen aanroepen voor enum of set met typeinfo
 begin
   Result := TValue.From<T>(aValue).ToString;
+end;
+
+
+{ TEnumeratorForFastList<T> }
+
+function TEnumeratorForFastList<T>.GetCurrent: T;
+begin
+  Result := fList[fIndex];
+end;
+
+function TEnumeratorForFastList<T>.MoveNext: Boolean;
+begin
+  Inc(fIndex);
+  Result := fIndex < fList.Count;
+end;
+
+{ TFastObjectList<T> }
+
+function TFastObjectList<T>.ValidIndex(ix: Integer): Boolean;
+begin
+  Result := (ix >= 0) and (ix < Count);
+end;
+
+procedure TFastObjectList<T>.CheckIndex(aIndex: Integer);
+begin
+  if (aIndex < 0) or (aIndex >= Count) then begin
+    Throw('TFastObjectList (' + T.ClassName + ') index error (' + aIndex.ToString + ')');
+  end;
+end;
+
+function TFastObjectList<T>.GetItem(aIndex: Integer): T;
+begin
+  {$ifdef paranoid} CheckIndex(aIndex); {$endif}
+  Result := Self[aIndex];
+end;
+
+function TFastObjectList<T>.First: T;
+begin
+  {$ifdef paranoid} CheckIndex(0); {$endif}
+  Result := GetItem(0);
+end;
+
+function TFastObjectList<T>.Last: T;
+begin
+  {$ifdef paranoid} CheckIndex(0); {$endif}
+  Result := GetItem(Count - 1);
+end;
+
+function TFastObjectList<T>.FirstOrDefault: T;
+begin
+  if Count > 0
+  then Result := GetItem(0)
+  //else Result := nil;
+end;
+
+function TFastObjectList<T>.LastOrDefault: T;
+begin
+  if Count > 0
+  then Result := GetItem(Count - 1)
+  //else Result := nil;
+end;
+
+function TFastObjectList<T>.HasItems: Boolean;
+begin
+  Result := Count > 0;
+end;
+
+function TFastObjectList<T>.IsEmpty: Boolean;
+begin
+  Result := Count = 0;
+end;
+
+function TFastObjectList<T>.GetEnumerator: TEnumeratorForFastList<T>;
+begin
+  // we do not use a record constructor. this is faster
+  Result.fIndex := -1;
+  Result.fList := Self;
+end;
+
+function Scale(const i: Integer): Integer;
+begin
+  Result := Round(i * CurrentDisplay.DpiScale);
+end;
+
+function Scale(const r: TRect): TRect;
+begin
+  Result.Left := Scale(r.Left);
+  Result.Top := Scale(r.Top);
+  Result.Right := Scale(r.Right);
+  Result.Bottom := Scale(r.Bottom);
+end;
+
+{ TIntHelper }
+
+function TIntHelper.ToString: string;
+begin
+  Result := IntToStr(Self);
+end;
+
+function TIntHelper.Scale: Integer;
+begin
+  Result := Base.utils.Scale(Self);
+end;
+
+{ TStringArrayHelper }
+
+function TStringArrayHelper.IndexOf(const s: string): Integer;
+var
+  ix: Integer;
+  var tmp: string;
+begin
+  ix := 0;
+  for tmp in Self do begin
+    if s = tmp then
+      Exit(ix);
+    Inc(ix);
+  end;
+  Result := -1;
+end;
+
+function TStringArrayHelper.Contains(const s: string): Boolean;
+begin
+  Result := IndexOf(s) >= 0;
+end;
+
+function TStringArrayHelper.Length: Integer;
+begin
+  Result := System.Length(Self);
+end;
+
+procedure TStringArrayHelper.Sort;
+begin
+  Self.Sort();
 end;
 
 function LeadZeroStr(const i, zeros: Integer): string; inline;

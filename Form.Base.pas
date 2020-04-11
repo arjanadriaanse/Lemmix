@@ -5,9 +5,9 @@ unit Form.Base;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages,
-  System.SysUtils, System.Classes,
-  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
+  LCLIntf, LMessages,
+  SysUtils, Classes,
+  Graphics, Controls, Forms, Dialogs,
   Gr32,
   Base.Utils,
   Prog.Types, Prog.App;

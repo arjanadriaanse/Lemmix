@@ -5,7 +5,7 @@ unit Level.Loader;
 interface
 
 uses
-  Classes, System.SysUtils, System.Contnrs, System.Math,
+  Classes, SysUtils, Contnrs, Math,
   Base.Utils,
   Dos.Consts, Dos.Structures,
   Prog.Base,
@@ -38,8 +38,9 @@ begin
 end;
 
 class procedure TLevelLoader.LoadLVLFromFile(const aFileName: string; var LVL: TLVLRec);
+  var f: TBufferedFileStream;
 begin
-  var f: TBufferedFileStream := TBufferedFileStream.Create(aFileName, fmOpenRead or fmShareDenyNone);
+  f := TBufferedFileStream.Create(aFileName, fmOpenRead or fmShareDenyNone);
   try
     LoadLVLFromStream(f, LVL);
   finally
@@ -181,6 +182,7 @@ var
   Obj: TInteractiveObject;
   Ter: TTerrain;
   Steel: TSteel;
+  C: AnsiChar;
 begin
 
   FillChar(LVL, SizeOf(LVL), 0);
@@ -226,7 +228,7 @@ begin
    LVL.Reserved := $FFFF;
 
   for i := 1 to aLevel.Info.Title.Length do begin
-    var C: AnsiChar := AnsiChar(aLevel.Info.Title[i]);
+    C := AnsiChar(aLevel.Info.Title[i]);
     LVL.LevelName[i - 1] := C;
     if i > 31 then
       BReak;
@@ -347,14 +349,18 @@ var
 
     function ValueToInts(count: Integer; var ar: TArray<Integer>): Boolean;
     // split comma-separated values
+    var
+      strings: TStringArray;
+      i: Integer;
+      s: string;
     begin
-      var strings: TArray<string> := value.Split([',']);
+      strings := value.Split([',']);
       Result := strings.Length = count;
       if strings.Length <> count then
         Exit;
       SetLength(ar, count);
-      for var i := 0 to strings.Length - 1 do begin
-        var s := strings[i].Trim;
+      for i := 0 to strings.Length - 1 do begin
+        s := strings[i].Trim;
         if not TryStrToInt(s, ar[i]) then begin
           SetLength(ar, 0);
           Exit(False);
@@ -409,13 +415,14 @@ var
     // modifier: 8=NO_OVERWRITE, 4=UPSIDE_DOWN, 2=REMOVE (combining allowed, 0=FULL)
     var
       ar: TArray<Integer>;
+      ter: TTerrain;
       flags: Integer;
     begin
       Result := False;
       if level.Terrains.Count >= LVL_MAXTERRAINCOUNT then
         Exit;
       if key.StartsWith('terrain_', True) and ValueToInts(4, ar) then begin
-        var ter := TTerrain.Create;
+        ter := TTerrain.Create;
         level.Terrains.Add(ter);
         ter.Identifier := ar[0];
         ter.Left := ar[1] div 2;
@@ -438,15 +445,16 @@ var
     // modifier 8=VIS_ON_TERRAIN, 4=NO_OVERWRITE, 0=FULL (only one value possible)
     var
       ar: TArray<Integer>;
+      ix: Integer;
+      obj: TInteractiveObject;
       flags: Integer;
     begin
       Result := False;
       if level.InteractiveObjects.Count >= LVL_MAXOBJECTCOUNT then
         Exit;
       if key.StartsWith('object_', True) and ValueToInts(5, ar) then begin
-        var ix: Integer;
         if TileKeyNumber(ix) then begin
-          var obj := TInteractiveObject.Create;
+          obj := TInteractiveObject.Create;
           level.InteractiveObjects.Add(obj);
           obj.Identifier := ar[0];
           obj.Left := (ar[1] div 2) and not 7; // dos-alignment
@@ -470,14 +478,15 @@ var
     // steel_0 = 1568, 176, 128, 32
     var
       ar: TArray<Integer>;
+      ix: Integer;
+      steel: TSteel;
     begin
       Result := False;
       if level.Steels.Count >= LVL_MAXSTEELCOUNT then
         Exit;
       if key.StartsWith('steel_', True) and ValueToInts(4, ar) then begin
-        var ix: Integer;
         if TileKeyNumber(ix) and ValueToInts(4, ar) then begin
-          var steel := TSteel.Create;
+          steel := TSteel.Create;
           level.Steels.Add(steel);
           steel.Left := (ar[0] div 2) and not 3; // dos-align
           steel.Top := (ar[1] div 2) and not 3; // dos-align
@@ -531,21 +540,23 @@ var
    end;
 
 
-
+var
+  i: Integer;
+  ar: TArray<string>;
 begin
   level := TLevel.Create;
   list := TStringList.Create;
   try
     list.LoadFromFile(aFilename);
-    for var i := 0 to list.Count - 1 do begin
+    for i := 0 to list.Count - 1 do begin
       line := list[i].Trim;
       if line.IsEmpty or line.StartsWith('#') then
         Continue;
       equalsPos := Pos('=', line);
       if equalsPos <= 0 then
         Continue;
-      var ar: TArray<string> := line.Split(['=']);
-      if ar.Length <> 2 then
+      ar := line.Split(['=']);
+      if Length(ar) <> 2 then
         Continue;
       key := ar[0].Trim;
       value := ar[1].Trim;

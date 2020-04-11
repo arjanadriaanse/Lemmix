@@ -197,7 +197,7 @@ var
   ByteMap: TByteMap;
   x, y: Integer;
   C: PColor32;
-  B: System.Types.PByte;
+  B: Types.PByte;
   PalLen: Integer;
 
     procedure PreparePal;

@@ -7,7 +7,7 @@ unit Styles.Base;
 interface
 
 uses
-  System.Classes, System.SysUtils, System.Contnrs, System.Generics.Collections, System.Character,
+  Classes, SysUtils, Contnrs, Generics.Collections, Character,
   GR32,
   Base.Utils, Base.Bitmaps,
   Dos.Consts, Dos.Compression, Dos.Bitmaps, Dos.Structures,
@@ -320,6 +320,8 @@ begin
 end;
 
 constructor TStyle.Create(const aName: string);
+var
+  info: Consts.TStyleInformation;
 begin
   if GetLevelSystemClass = nil then
     Throw('TStyle.Create (' + ClassName + '): undefined levelsystemclass');
@@ -327,7 +329,7 @@ begin
   // name and def first
   fName := aName;
   // set the styledef
-  for var info: Consts.TStyleInformation in Consts.StyleInformationlist do
+  for info in Consts.StyleInformationlist do
     if info.Name = fName then begin
       fStyleInformation := info;
       fDef := info.StyleDef;
@@ -392,14 +394,18 @@ procedure TLemmingAnimationSet.InitMetadata;
 -------------------------------------------------------------------------------}
 
     procedure Lem(aImageLocation: Integer; const aDescription: string; aFrameCount, aWidth, aHeight, aBPP, aFootX, aFootY: Integer; aAnimType: TLemmingAnimationType);
+    var
+      A: TMetaLemmingAnimation;
     begin
-      var A: TMetaLemmingAnimation := TMetaLemmingAnimation.Create(aDescription, aFrameCount, aWidth, aHeight, aBPP, aImageLocation, aAnimType, aFootX, aFootY);
+      A := TMetaLemmingAnimation.Create(aDescription, aFrameCount, aWidth, aHeight, aBPP, aImageLocation, aAnimType, aFootX, aFootY);
       fMetaLemmingAnimationList.Add(A);
     end;
 
     procedure Msk(aImageLocation: Integer; const aDescription: string; aFrameCount, aWidth, aHeight, aBPP: Integer);
+    var
+      M: TMetaExtraAnimation;
     begin
-      var M: TMetaExtraAnimation := TMetaExtraAnimation.Create(aDescription, aFrameCount, aWidth, aHeight, aBPP, aImageLocation);
+      M := TMetaExtraAnimation.Create(aDescription, aFrameCount, aWidth, aHeight, aBPP, aImageLocation);
       fMetaExtraAnimationList.Add(M);
     end;
 
@@ -620,7 +626,10 @@ procedure TGraphicSet.LoadMetaData;
 
 var
   DosData: TDosGroundRec;
-
+  O: TDosMetaObject;
+  MO: TMetaObject;
+  T: TDosMetaTerrain;
+  MT: TMetaTerrain;
 begin
   LoadDosMetaData(DosData);
 
@@ -637,10 +646,10 @@ begin
   AssemblePalette;
 
   // meta objects
-  for var O: TDosMetaObject in DosData.ObjectInfoArray do begin
+  for O in DosData.ObjectInfoArray do begin
     if O.oWidth = 0 then
       Break; // the rest is empty
-    var MO: TMetaObject := TMetaObject.Create;
+    MO := TMetaObject.Create;
     fMetaObjectList.Add(MO);
     MO.AssignFromDos(O);
   end;
@@ -650,10 +659,10 @@ begin
     Exit;
 
   // meta terrains
-  for var T: TDosMetaTerrain in DosData.TerrainInfoArray do begin
+  for T in DosData.TerrainInfoArray do begin
     if T.tWidth = 0 then
       Break; // the rest is empty
-    var MT: TMetaTerrain := TMetaTerrain.Create;
+    MT := TMetaTerrain.Create;
     fMetaTerrainList.Add(MT);
     MT.AssignFromDos(T);
   end;
@@ -666,6 +675,14 @@ var
   Decompressor: TDosDatDecompressor;
   MemStream: TMemoryStream;
   DataStream: TStream;
+  MT: TMetaTerrain;
+  Bmp: TBitmap32;
+  SpecBmp: TVgaSpecBitmap;
+  MO: TMetaObject;
+  y: Integer;
+  Loc: Integer;
+  framebitmap: TBitmap32;
+  f: Integer;
 begin
 
   DosSections := TDosDatSectionList.Create;
@@ -684,15 +701,15 @@ begin
     // get terrains from the first section if this is a normal graphicset (#0)
     if fGraphicSetIdExt <= 0 then begin
       MemStream := DosSections[0].DecompressedData;
-      for var MT: TMetaTerrain in fMetaTerrainList do begin
-        var Bmp: TBitmap32 := TBitmap32.Create;
+      for MT in fMetaTerrainList do begin
+        Bmp := TBitmap32.Create;
         fTerrainBitmaps.Add(Bmp);
         TDosPlanarBitmap.LoadFromStream(MemStream, Bmp, MT.ImageLocation, MT.Width, MT.Height, 4, fPalette);
       end;
     end
     // or get the one terrainbitmap from the vgaspec
     else begin
-      var SpecBmp: TVgaSpecBitmap := TVgaSpecBitmap.Create;
+      SpecBmp := TVgaSpecBitmap.Create;
       try
         DataStream := TData.CreateDataStream(Style.Name, fGraphicExtFile, TDataType.LevelSpecialGraphics);
         try
@@ -709,15 +726,15 @@ begin
     // loadanimationfromstream is not really impossible. maybe there are gaps, maybe some offset error
     // get objects from the second section
     MemStream := DosSections[1].DecompressedData;
-    for var MO: TMetaObject in fMetaObjectList do begin
-      var Bmp: TBitmap32 := TBitmap32.Create;
+    for MO in fMetaObjectList do begin
+      Bmp := TBitmap32.Create;
       Bmp.SetSize(MO.Width, MO.Height * MO.AnimationFrameCount);
       fObjectBitmaps.Add(Bmp);
-      var y: Integer := 0;
-      var Loc: Integer := MO.AnimationFramesBaseLoc;
-      var framebitmap: TBitmap32 := TBitmap32.Create;
+      y := 0;
+      Loc := MO.AnimationFramesBaseLoc;
+      framebitmap := TBitmap32.Create;
       // load all animation frames and glue together
-      for var f: Integer := 0 to MO.AnimationFrameCount - 1 do begin
+      for f := 0 to MO.AnimationFrameCount - 1 do begin
         TDosPlanarBitmap.LoadFromStream(MemStream, FrameBitmap, Loc, MO.Width, MO.Height, 4, fPalette);
         FrameBitmap.DrawTo(Bmp, 0, Y);
         Inc(Y, MO.Height);
@@ -752,6 +769,8 @@ begin
 end;
 
 procedure TLevelSystem.AfterConstruction;
+var
+  section: TSection;
 begin
   inherited AfterConstruction;
   DoInitializeLevelSystem; // let descendant implement sections and levels
@@ -760,7 +779,7 @@ begin
   if SectionList.IsEmpty then
     Throw('No game sections implemented', 'AfterConstruction');
 
-  for var section: TSection in Sectionlist do
+  for section in Sectionlist do
     if section.LevelLoadingInformationList.IsEmpty then
       Throw('No levelinformation found in one of the sections', 'AfterConstruction');
 end;
@@ -853,6 +872,8 @@ var
   levelstring: string;
   foundSection: TSection;
   charsFound, digitsFound: Boolean;
+  C: Char;
+  section: TSection;
   ix: Integer;
 begin
   Result := nil;
@@ -865,21 +886,21 @@ begin
 
   sectionstring := '';
   levelstring := '';
-  for var C: Char in aCode do
-    if C.IsLetter then begin
+  for C in aCode do
+    if IsLetter(C) then begin
       if digitsFound then
         Exit;
       charsFound := True;
       sectionstring := sectionstring + C;
     end
-    else if C.IsDigit then begin
+    else if IsDigit(C) then begin
       if not CharsFound then
         Exit;
       digitsFound := True;
       levelstring := levelstring + C;
     end;
 
-  for var section: TSection in SectionList do
+  for section in SectionList do
     if SameText(section.SectionName, sectionstring) then begin
       foundSection := section;
       Break;
@@ -900,9 +921,11 @@ begin
 end;
 
 function TLevelSystem.SelectRandomLevel: TLevelLoadingInformation;
+var
+  s, l: Integer;
 begin
-  var s: Integer := Random(fSectionList.Count);
-  var l: Integer := Random(fSectionList[s].fLevelLoadingInformationList.Count);
+  s := Random(fSectionList.Count);
+  l := Random(fSectionList[s].fLevelLoadingInformationList.Count);
   Result := FindLevelByIndex(s, l);
 end;
 
@@ -969,7 +992,7 @@ var
   ext: string;
 begin
   fMusicFileName := s;
-  ext := ExtractFileExt(s).ToUpper;
+  ext := ToUpper(ExtractFileExt(s));
   if ext = '.MOD' then
     fMusicStreamType := TMusicStreamType.&MOD
   else if ext = '.MP3' then

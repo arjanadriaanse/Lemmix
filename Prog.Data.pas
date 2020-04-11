@@ -5,9 +5,9 @@ unit Prog.Data;
 interface
 
 uses
-  Winapi.Windows,
-  System.Classes, System.SysUtils, System.Contnrs, System.Zip, System.Generics.Collections,
-  Vcl.Graphics, Vcl.Imaging.PngImage,
+  LCLIntf,
+  Classes, SysUtils, Contnrs, Zipper, Generics.Collections,
+  Graphics, //Vcl.Imaging.PngImage,
   Base.Utils,
   Prog.Types, Prog.Base;
 
@@ -76,24 +76,25 @@ var
     var
       res: TResourceStream;
       str: TBytesStream;
-      zip: TZipFile;
-      bytes: System.SysUtils.TBytes;
-      internalname: string;
+      zip: TInflater;
+      //bytes: SysUtils.TBytes;
+      //internalname: string;
     begin
-      internalname := ExtractFileName(RealName); // no pathinfo in zip
+      //internalname := ExtractFileName(RealName); // no pathinfo in zip
       res := TResourceStream.Create(HINSTANCE, aResName, RT_RCDATA);
       try
         str := TBytesStream.Create;
-        zip := TZipFile.Create;
+        str.CopyFrom(res, res.Size);
+        str.Position := 0;
+        Result := TBytesStream.Create;
+        zip := TInflater.Create(str, Result, 1024);
+        zip.DeCompress;
         try
-          str.CopyFrom(res, res.Size);
-          str.Position := 0;
-          zip.Open(str, TZipMode.zmRead);
-          if zip.IndexOf(internalname) < 0 then
-            Throw('File not found in zip-resource: ' + internalname, method + 'LoadFromZipResource');
-          zip.Read(internalname, bytes);
+          //if zip.IndexOf(internalname) < 0 then
+          //  Throw('File not found in zip-resource: ' + internalname, method + 'LoadFromZipResource');
+          //zip.
           // the stream copies the bytes
-          Result := TBytesStream.Create(bytes); // 'global' result
+          //Result := TBytesStream.Create(bytes); // 'global' result
         finally
           zip.Free;
           str.Free;
@@ -123,6 +124,9 @@ var
       Result := TBytesStream.Create; // 'global' result
       Result.LoadFromFile(RealName);
     end;
+var
+  forceReadFromDisk: Boolean;
+  info: Consts.TStyleInformation;
 
 begin
   Result := nil;
@@ -130,10 +134,10 @@ begin
   //todo: make a little bit more readable
   mapping := False;
 
-  var forceReadFromDisk: Boolean :=
+  forceReadFromDisk :=
     ((Consts.StyleDef = TStyleDef.User) and (aType in [TDataType.LemmingData, TDataType.LevelGraphics, TDataType.LevelSpecialGraphics, TDataType.Level, TDataType.Music]));
 
-  var info: Consts.TStyleInformation := Consts.FindStyleInfo(aStyleName);
+  info := Consts.FindStyleInfo(aStyleName);
 
   if (info.UserGraphicsMapping = TLevelGraphicsMapping.Concat) and (aType in [TDataType.LemmingData, TDataType.LevelGraphics]) then begin
     mapping := True;
@@ -245,9 +249,11 @@ begin
 end;
 
 class function TData.CreateCursorBitmap(const aStyleName, aFileName: string; preventCaching: Boolean = False): TBitmap;
+var
+  stream : TBytesStream;
 begin
   Result := nil;
-  var stream : TBytesStream := nil;
+  stream := nil;
   try
     stream := CreateDataStream(aStyleName, aFileName, TDataType.Cursor, preventCaching);
     Result := TBitmap.Create;
