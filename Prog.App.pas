@@ -11,7 +11,7 @@ unit Prog.App; // todo: rename to global or something
 interface
 
 uses
-  System.SysUtils,
+  SysUtils,
   GR32,
   Base.Utils,
   Styles.Base,

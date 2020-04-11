@@ -5,7 +5,7 @@ unit Prog.Cache;
 interface
 
 uses
-  System.Classes, System.Contnrs, System.SysUtils, System.IOUtils, System.Generics.Collections, System.Character,
+  Classes, Contnrs, SysUtils, {IOUtils,} Generics.Collections, Character,
   Dos.Structures,
   Base.Utils,
   Level.Hash,
@@ -15,7 +15,7 @@ uses
 type
   // the style cache builds lists of all styles with levelhashes + titles.
   // this is needed to be able to quickly find levelhashes, levelcodes, replayfiles
-  TStyleCacheFeedbackProc = reference to procedure(const s: string);
+  //TStyleCacheFeedbackProc = reference to procedure(const s: string);
 
   TStyleCache = class
   public

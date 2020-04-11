@@ -5,7 +5,7 @@ unit Prog.Config;
 interface
 
 uses
-  System.Classes, System.SysUtils,
+  Classes, SysUtils,
   Base.Utils,
   Prog.Types, Prog.Base;
 
@@ -36,11 +36,6 @@ const
 
 type
   TConfig = record
-  private
-    function GetMiscOption(index: TMiscOption): Boolean; inline;
-    procedure SetMiscOption(index: TMiscOption; aValue: Boolean); inline;
-    function GetSoundOption(index: TSoundOption): Boolean; inline;
-    procedure SetSoundOption(index: TSoundOption; aValue: Boolean); inline;
   public
     LoadedSecretOptions: TMiscOptions;
     MiscOptions: TMiscOptions;
@@ -53,6 +48,11 @@ type
     PathToMusic: string;
     procedure Load;
     procedure Save;
+    function GetMiscOption(index: TMiscOption): Boolean; inline;
+    procedure SetMiscOption(index: TMiscOption; aValue: Boolean); inline;
+    function GetSoundOption(index: TSoundOption): Boolean; inline;
+    procedure SetSoundOption(index: TSoundOption; aValue: Boolean); inline;
+    {
   // music options
     property MusicEnabled: Boolean index TSoundOption.Music read GetMiscOption write SetMiscOption;
     property SoundEnabled: Boolean index TSoundOption.Sound read GetSoundOption write SetSoundOption;
@@ -63,7 +63,12 @@ type
     property UseFadeOut: Boolean index TMiscOption.UseFadeOut read GetMiscOption write SetMiscOption;
     property UseCheatScrollingInPreviewScreen: Boolean index TMiscOption.UseCheatScrollingInPreviewScreen read GetMiscOption write SetMiscOption;
     property ShowDefaultCursor: Boolean index TMiscOption.ShowDefaultCursor read GetMiscOption write SetMiscOption;
+    }
   end;
+
+  TMiscOptionEnum = Enum<TMiscOption>;
+  TSoundOptionEnum = Enum<TSoundOption>;
+  TOptionalMechanicEnum = Enum<TOptionalMechanic>;
 
 implementation
 
@@ -96,7 +101,10 @@ end;
 procedure TConfig.Load;
 var
   list: TStringList;
-  filename, value: string;
+  entry, filename, value: string;
+  misc: TMiscOption;
+  snd: TSoundOption;
+  mech: TOptionalMechanic;
   v: Integer;
 begin
   // clear
@@ -117,8 +125,8 @@ begin
   try
     list.LoadFromFile(filename);
     // misc
-    for var misc: TMiscOption :=  Low(TMiscOption) to High(TMiscOption) do begin
-      var entry: string := 'Misc.' + Enum.AsString(misc);
+    for misc :=  Low(TMiscOption) to High(TMiscOption) do begin
+      entry := 'Misc.' + TMiscOptionEnum.AsString(misc);
       value := list.Values[entry].Trim;
       if value.Length = 1 then
         case value[1] of
@@ -131,8 +139,8 @@ begin
     end;
 
     // sound
-    for var snd: TSoundOption := Low(TSoundOption) to High(TSoundOption) do begin
-      var entry: string := 'Sounds.' + Enum.AsString(snd);
+    for snd := Low(TSoundOption) to High(TSoundOption) do begin
+      entry := 'Sounds.' + TSoundOptionEnum.AsString(snd);
       value := list.Values[entry].Trim;
       if value.Length = 1 then
         case value[1] of
@@ -142,8 +150,8 @@ begin
     end;
 
     // optional mechanics
-    for var mech: TOptionalMechanic := Low(TOptionalMechanic) to High(TOptionalMechanic) do begin
-      var entry: string := 'Mechanic.' + Enum.AsString(mech);
+    for mech := Low(TOptionalMechanic) to High(TOptionalMechanic) do begin
+      entry := 'Mechanic.' + TOptionalMechanicEnum.AsString(mech);
       value := list.Values[entry].Trim;
       if value.Length = 1 then
         case value[1] of
@@ -182,13 +190,16 @@ procedure TConfig.Save;
 var
   list: TStringList;
   filename, entry: string;
+  misc: TMiscOption;
+  snd: TSoundOption;
+  mech: TOptionalMechanic;
 begin
   filename := ReplaceFileExt(Consts.AppName, '.config');
   list := TStringList.Create;
   try
     // misc
-    for var misc: TMiscOption :=  Low(TMiscOption) to High(TMiscOption) do begin
-      entry := 'Misc.' + Enum.AsString(misc);
+    for misc :=  Low(TMiscOption) to High(TMiscOption) do begin
+      entry := 'Misc.' + TMiscOptionEnum.AsString(misc);
       // only save secretoptions if they were already in the config
       if not (misc in SECRET_OPTIONS) or (misc in LoadedSecretOptions) then begin
         if misc in MiscOptions
@@ -198,16 +209,16 @@ begin
     end;
 
     // sound
-    for var snd: TSoundOption :=  Low(TSoundOption) to High(TSoundOption) do begin
-      entry := 'Sounds.' + Enum.AsString(snd);
+    for snd :=  Low(TSoundOption) to High(TSoundOption) do begin
+      entry := 'Sounds.' + TSoundOptionEnum.AsString(snd);
       if snd in SoundOptions
       then list.Values[entry] := '1'
       else  list.Values[entry] := '0'
     end;
 
     // sound
-    for var mech: TOptionalMechanic :=  Low(TOptionalMechanic) to High(TOptionalMechanic) do begin
-      entry := 'Mechanic.' + Enum.AsString(mech);
+    for mech :=  Low(TOptionalMechanic) to High(TOptionalMechanic) do begin
+      entry := 'Mechanic.' + TOptionalMechanicEnum.AsString(mech);
       if mech in OptionalMechanics
       then list.Values[entry] := '1'
       else  list.Values[entry] := '0'

@@ -5,7 +5,7 @@ unit Styles.Dos;
 interface
 
 uses
-  System.Classes, System.SysUtils,
+  Classes, SysUtils,
   Base.Utils,
   Prog.Base, Prog.Data,
   Dos.Consts,
@@ -234,14 +234,14 @@ var
   levelFileIndex: Integer;
   isOdd: Boolean;
   oddIndex: Integer;
-  iMusic: Integer;
+  iMusic, iSection, iLevel: Integer;
 begin
   fOddTableFileName := 'oddtable.dat';
   iMusic := 1;
-  for var iSection := 0 to 3 do begin
+  for iSection := 0 to 3 do begin
     section := TSection.Create(Self);
     section.SectionName := sectionNames[iSection];
-    for var iLevel: Integer := 0 to 29 do begin
+    for iLevel := 0 to 29 do begin
       level := TLevelLoadingInformation.Create(section);
       GetEntry(section.SectionIndex, level.LevelIndex, {out} levelFileName, {out} levelFileIndex, {out} isOdd, {out} oddIndex);
       level.SourceFileName := levelFileName;
@@ -298,14 +298,14 @@ var
   levelFileIndex: Integer;
   isOdd: Boolean;
   oddIndex: Integer;
-  iMusic: Integer;
+  iMusic, iSection, iLevel: Integer;
 begin
   fOddTableFileName := '';
   iMusic := 1;
-  for var iSection := 0 to 4 do begin
+  for iSection := 0 to 4 do begin
     section := TSection.Create(Self);
     section.SectionName := sectionNames[iSection];
-    for var iLevel: Integer := 0 to 19 do begin
+    for iLevel := 0 to 19 do begin
       level := TLevelLoadingInformation.Create(section);
       GetEntry(section.SectionIndex, level.LevelIndex, {out} levelFileName, {out} levelFileIndex, {out} isOdd, {out} oddIndex);
       level.SourceFileName := levelFileName;
@@ -387,14 +387,14 @@ var
   levelFileIndex: Integer;
   isOdd: Boolean;
   oddIndex: Integer;
-  iMusic: Integer;
+  iMusic, iSection, iLevel: Integer;
 begin
   fOddTableFileName := '';
   iMusic := 1;
-  for var iSection := 0 to 1 do begin
+  for iSection := 0 to 1 do begin
     section := TSection.Create(Self);
     section.SectionName := sectionNames[iSection];
-    for var iLevel: Integer := 0 to 15 do begin
+    for iLevel := 0 to 15 do begin
       level := TLevelLoadingInformation.Create(section);
       GetEntry(section.SectionIndex, level.LevelIndex, {out} levelFileName, {out} levelFileIndex, {out} isOdd, {out} oddIndex);
       level.SourceFileName := levelFileName;
@@ -502,14 +502,14 @@ var
   levelFileIndex: Integer;
   isOdd: Boolean;
   oddIndex: Integer;
-  iMusic: Integer;
+  iMusic, iSection, iLevel: Integer;
 begin
   fOddTableFileName := '';
   iMusic := 1;
-  for var iSection := 0 to 3 do begin
+  for iSection := 0 to 3 do begin
     section := TSection.Create(Self);
     section.SectionName := sectionNames[iSection];
-    for var iLevel: Integer := 0 to 15 do begin
+    for iLevel := 0 to 15 do begin
       level := TLevelLoadingInformation.Create(section);
       GetEntry(section.SectionIndex, level.LevelIndex, {out} levelFileName, {out} levelFileIndex, {out} isOdd, {out} oddIndex);
       level.SourceFileName := levelFileName;
@@ -558,13 +558,13 @@ var
   levelFileIndex: Integer;
   isOdd: Boolean;
   oddIndex: Integer;
-  iMusic: Integer;
+  iMusic, iLevel: Integer;
 begin
   fOddTableFileName := '';
   iMusic := 1;
   section := TSection.Create(Self);
   section.SectionName := 'XMas';
-  for var iLevel: Integer := 0 to 3 do begin
+  for iLevel := 0 to 3 do begin
     level := TLevelLoadingInformation.Create(section);
     GetEntry(section.SectionIndex, level.LevelIndex, {out} levelFileName, {out} levelFileIndex, {out} isOdd, {out} oddIndex);
     level.SourceFileName := levelFileName;
@@ -611,13 +611,13 @@ var
   levelFileIndex: Integer;
   isOdd: Boolean;
   oddIndex: Integer;
-  iMusic: Integer;
+  iMusic, iLevel: Integer;
 begin
   fOddTableFileName := '';
   iMusic := 1;
   section := TSection.Create(Self);
   section.SectionName := 'XMas';
-  for var iLevel: Integer := 0 to 3 do begin
+  for iLevel := 0 to 3 do begin
     level := TLevelLoadingInformation.Create(section);
     GetEntry(section.SectionIndex, level.LevelIndex, {out} levelFileName, {out} levelFileIndex, {out} isOdd, {out} oddIndex);
     level.SourceFileName := levelFileName;

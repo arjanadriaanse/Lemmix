@@ -7,7 +7,7 @@ unit Prog.Base;
 interface
 
 uses
-  Classes, SysUtils, Contnrs, Generics.Collections,
+  Classes, SysUtils, Contnrs,
   Dos.Consts,
   Base.Utils,
   Prog.Types;
@@ -65,7 +65,7 @@ type
         property UserSpecialGraphicsMapping: TLevelSpecialGraphicsMapping read fUserSpecialGraphicsMapping;
       end;
 
-    TStyleInformationList = class(TObjectList<TStyleInformation>);
+    TStyleInformationList = class(TFastObjectList<TStyleInformation>);
 
   strict private
 

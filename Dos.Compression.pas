@@ -12,7 +12,7 @@ unit Dos.Compression;
 interface
 
 uses
-  System.Classes, System.SysUtils, System.Math, System.Contnrs,
+  Classes, SysUtils, Math, Contnrs,
   Base.Utils;
 
 type

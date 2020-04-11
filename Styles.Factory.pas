@@ -4,7 +4,7 @@ unit Styles.Factory;
 interface
 
 uses
-  System.Generics.Collections,
+  Generics.Collections,
   Base.Utils,
   Prog.Types, Prog.Base,
   Styles.Base, Styles.Dos, Styles.User;

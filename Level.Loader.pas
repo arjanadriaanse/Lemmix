@@ -542,7 +542,7 @@ var
 
 var
   i: Integer;
-  ar: TArray<string>;
+  ar: TStringArray;
 begin
   level := TLevel.Create;
   list := TStringList.Create;
@@ -556,7 +556,7 @@ begin
       if equalsPos <= 0 then
         Continue;
       ar := line.Split(['=']);
-      if Length(ar) <> 2 then
+      if ar.Length <> 2 then
         Continue;
       key := ar[0].Trim;
       value := ar[1].Trim;
