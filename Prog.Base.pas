@@ -7,7 +7,7 @@ unit Prog.Base;
 interface
 
 uses
-  System.Classes, System.SysUtils, System.IOUtils, System.Contnrs,
+  Classes, SysUtils, Contnrs, Generics.Collections,
   Dos.Consts,
   Base.Utils,
   Prog.Types;
@@ -65,7 +65,7 @@ type
         property UserSpecialGraphicsMapping: TLevelSpecialGraphicsMapping read fUserSpecialGraphicsMapping;
       end;
 
-    TStyleInformationList = class(TFastObjectList<TStyleInformation>);
+    TStyleInformationList = class(TObjectList<TStyleInformation>);
 
   strict private
 
@@ -183,7 +183,7 @@ type
     class property ChristmasPalette: Boolean read fChristmasPalette;
   // some style stuff
     class function IsUserStyle(const aName: string): Boolean; static;
-    class function GetCustomStyleFolders: TArray<string>; static;
+    //class function GetCustomStyleFolders: TArray<string>; static;
     class function FindStyleInfo(const aStyleName: string): TStyleInformation; static;
     class function GraphicSetNameToGraphicSet(const aGraphicSetname: string): Integer; static;
     class property StyleInformationlist: TStyleInformationList read fStyleInformationList;
@@ -225,27 +225,31 @@ const
 var
   value: string;
   list: TStringList;
+  ix: Integer;
+  s: string;
+  info: TStyleInformation;
 begin
-  if not aPathToStyles.IsEmpty and TDirectory.Exists(aPathToStyles) then
+  if not aPathToStyles.IsEmpty and DirectoryExists(aPathToStyles) then
     fPathToStyles := IncludeTrailingPathDelimiter(aPathToStyles);
 
-  if not aPathToMusic.IsEmpty and TDirectory.Exists(aPathToMusic) then
+  if not aPathToMusic.IsEmpty and DirectoryExists(aPathToMusic) then
     fPathToMusic := IncludeTrailingPathDelimiter(aPathToMusic);
 
   fStyleInformationList := TStyleInformationList.Create;
 
-  fSupportedStyleNames := [TStyleDef.Orig.Name] +
-                          [TStyleDef.Ohno.Name] +
-                          [TStyleDef.H93.Name] +
-                          [TStyleDef.H94.Name] +
-                          [TStyleDef.X91.Name] +
-                          [TStyleDef.X92.Name] +
-                          GetCustomStyleFolders;
+  fSupportedStyleNames := TArray<string>.Create(
+                          TStyleDef.Orig.Name,
+                          TStyleDef.Ohno.Name,
+                          TStyleDef.H93.Name,
+                          TStyleDef.H94.Name,
+                          TStyleDef.X91.Name,
+                          TStyleDef.X92.Name);
+                          //GetCustomStyleFolders;
 
   // fill style information
-  var ix: Integer :=0;
-  for var s in fSupportedStyleNames do begin
-    var info: TStyleInformation := TStyleInformation.Create;
+  ix := 0;
+  for s in fSupportedStyleNames do begin
+    info := TStyleInformation.Create;
     fStyleInformationList.Add(info);
     if ix < Ord(TStyleDef.User) then
       info.fStyleDef := TStyleDef(ix)
@@ -422,9 +426,11 @@ begin
 end;
 
 class function Consts.FindDefaultStyle(const aName: string; out aStyle: TStyleDef): Boolean;
+var
+  s: TStyleDef;
 begin
   Check;
-  for var s: TStyleDef in DefaultStyles do
+  for s in DefaultStyles do
     if SameText(STYLE_NAMES[s], aName) then begin
       aStyle := s;
       Exit(True);
@@ -437,6 +443,9 @@ class procedure Consts.SetStyleName(const aName: string);
 var
   found: TStyleDef;
   newName: string;
+  Exists: Boolean;
+  s: string;
+  info: TStyleInformation;
   // todo: rework and let everything depend in StyleInformation
 begin
   Check;
@@ -444,8 +453,8 @@ begin
     Exit;
 
   newName := aName;
-  var Exists: Boolean := False;
-  for var s: string in fSupportedStyleNames do
+  Exists := False;
+  for s in fSupportedStyleNames do
     if SameText(aName, s) then begin
       Exists := True;
       Break;
@@ -455,7 +464,7 @@ begin
   if not Exists then
     newName := TStyleDef.Orig.Name;
 
-  for var info: TStyleInformation in fStyleInformationList do
+  for info in fStyleInformationList do
     if SameText(newname, info.Name) then begin
       fStyleInfo := info;
       Break;
@@ -475,20 +484,25 @@ begin
 end;
 
 class function Consts.IsUserStyle(const aName: string): Boolean;
+var
+  style: TStyleDef;
 begin
-  for var style: TStyleDef in DefaultStyles do
+  for style in DefaultStyles do
     if SameText(style.Name, aName) then
       Exit(False);
   Result := True;
 end;
 
+{
 class function Consts.GetCustomStyleFolders: TArray<string>;
+var
+   Filter: TDirectory.TFilterPredicate;
 begin
-  if not TDirectory.Exists(PathToStyles) then
+  if not DirectoryExists(PathToStyles) then
     Exit(nil);
 
   // custom styles
-  var Filter: TDirectory.TFilterPredicate :=
+  Filter :=
     function(const Path: string; const SearchRec: TSearchRec): Boolean
     begin
       for var style: TStyleDef in DefaultStyles do
@@ -503,6 +517,7 @@ begin
     Result[i] := ExtractFileName(Result[i]);
 
 end;
+}
 
 class function Consts.FindStyleInfo(const aStyleName: string): TStyleInformation;
 begin

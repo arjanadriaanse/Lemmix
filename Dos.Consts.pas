@@ -29,7 +29,7 @@ unit Dos.Consts;
 interface
 
 uses
-  System.Types, System.SysUtils,
+  Types, SysUtils,
   Base.Utils;
 
 const
@@ -251,6 +251,8 @@ type
     SquishingTrap       // trap sound
   );
 
+  TSoundEffectEnum = Enum<TSoundEffect>;
+
   TSoundEffectHelper = record helper for TSoundEffect
   public
     function AsFileName: string;
@@ -267,7 +269,7 @@ implementation
 
 function TSoundEffectHelper.AsFileName: string;
 begin
-  Result := Enum.AsString(Self) + '.WAV';
+  Result := TSoundEffectEnum.AsString(Self) + '.WAV';
 end;
 
 { TMechanicsHelper }
@@ -291,14 +293,15 @@ const
    'Optional Right Click Glitch'
   );
 
-
+var
+  m: TMechanic;
 begin
   Result := '';
   if not align then
-    for var m: TMechanic in ALL_MECHANICS do
+    for m in ALL_MECHANICS do
       Result := Result + descriptions[m] + ': ' + YesNo(m in Self) + sLineBreak
   else
-    for var m: TMechanic in ALL_MECHANICS do
+    for m in ALL_MECHANICS do
       Result := Result + descriptions[m].PadRight(35) + ': ' + YesNo(m in Self) + sLineBreak;
 end;
 

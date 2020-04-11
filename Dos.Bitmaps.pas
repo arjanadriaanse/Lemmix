@@ -6,7 +6,7 @@ unit Dos.Bitmaps;
 interface
 
 uses
-  System.Classes, System.Types, System.SysUtils, System.Contnrs, System.Math,
+  Classes, Types, SysUtils, Contnrs, Math,
   GR32, GR32_OrdinalMaps,
   Dos.Compression, Dos.Structures,
   Base.Utils, Base.Bitmaps,

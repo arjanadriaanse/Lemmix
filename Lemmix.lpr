@@ -1,15 +1,15 @@
 program Lemmix;
 
-{$MODE Delphi}
+{$MODE Delphi}{$H+}
 
 {$include lem_directives.inc}
 {$include lem_resources.inc}
 
 uses
-  {Winapi.Windows,
-  Vcl.Forms,
-  Vcl.Themes,
-  Vcl.Styles,}
+  LCLIntf,
+  Forms,
+  Themes, Interfaces,
+  //Styles,
   Base.Bitmaps in 'Base.Bitmaps.pas',
   Base.Utils in 'Base.Utils.pas',
   Dos.Bitmaps in 'Dos.Bitmaps.pas',

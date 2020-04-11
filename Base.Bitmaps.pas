@@ -5,9 +5,9 @@ unit Base.Bitmaps;
 interface
 
 uses
-  Winapi.Windows,
-  System.Types, System.Classes, System.SysUtils, System.Generics.Collections, System.Math,
-  Vcl.Graphics, Vcl.Imaging.PngImage,
+  LCLIntf,
+  Types, Classes, SysUtils, Generics.Collections, Math,
+  Graphics,
   GR32,
   Base.Utils;
 
@@ -39,10 +39,10 @@ type
   TBitmap32Helper = class helper for TBitmap32
   public
     function GetPixelCount: Integer; inline;
-    function ToPng: TPngImage;
-    function ToWic: TWicImage;
-    procedure FromPng(png: TPngImage);
-    procedure SaveToPng(const aFileName: string);
+    //function ToPng: TPngImage;
+    //function ToWic: TWicImage;
+    //procedure FromPng(png: TPngImage);
+    //procedure SaveToPng(const aFileName: string);
   // some manipulations
     procedure ReplaceColor(FromColor, ToColor: TColor32);
     procedure ReplaceAllNonZeroColors(ToColor: TColor32);
@@ -71,8 +71,6 @@ type
     function TextSize(const s: string): TSize;
     function DrawText(const s: string; dst: TBitmap32; x, y: Integer): TSize;
   end;
-
-procedure MakeImageGrayscale(Image: TPngImage; Amount: Byte = 255);
 
 implementation
 
@@ -287,7 +285,7 @@ begin
 end;
 *)
 
-function TBitmap32Helper.ToPng: TPngImage;
+{function TBitmap32Helper.ToPng: TPngImage;
 var
   b: TBitmap;
 begin
@@ -326,20 +324,7 @@ begin
   finally
     b.Free;
   end;
-end;
-
-procedure TBitmap32Helper.SaveToPng(const aFileName: string);
-var
-  png: TPngImage;
-begin
-  png := nil;
-  try
-    png := ToPng;
-    png.SaveToFile(aFileName);
-  finally
-    png.Free;
-  end;
-end;
+end;}
 
 { TBitmapFont }
 
@@ -379,18 +364,21 @@ end;
 procedure TBitmapFont.CreateCompleteBitmap;
 var
   x, y: Integer;
+  neededWidth, neededHeight: Integer;
+  r: TRect;
+  ix: Integer;
 begin
   Assert(fTempList.Count = fFrameList.Count);
   Assert(fCharList.Count = fFrameList.Count);
 
-  var neededWidth: Integer := 0;
-  for var r: TRect in fFrameList do begin
+  neededWidth := 0;
+  for r in fFrameList do begin
     neededWidth := Max(neededWidth, r.Width);
   end;
-  var neededHeight: Integer := fFrameList[fFrameList.Count - 1].Bottom;
+  neededHeight := fFrameList[fFrameList.Count - 1].Bottom;
   SetSize(neededWidth, neededHeight);
   Clear(0);
-  for var ix := 0 to fCharList.Count - 1 do begin
+  for ix := 0 to fCharList.Count - 1 do begin
     x := fFrameList[ix].Left;
     y := fFrameList[ix].Top;
     fTempList[ix].DrawTo(Self, x, y);
@@ -424,9 +412,12 @@ begin
 end;
 
 function TBitmapFont.GetCharRect(C: Char): TRect;
+var
+  ix: Integer;
+  ch: Char;
 begin
-  var ix: Integer := 0;
-  for var ch: Char in fCharList do begin
+  ix := 0;
+  for ch in fCharList do begin
     if ch = C then
       Exit(fFrameList[ix]);
     inc(ix);
@@ -435,8 +426,10 @@ begin
 end;
 
 function TBitmapFont.DrawChar(C: Char; dst: TBitmap32; x, y: Integer): TSize;
+  var
+    R: TRect;
 begin
-  var R: TRect := GetCharRect(C);
+  R := GetCharRect(C);
   if R.IsEmpty then begin
     Result.cx := 0;
     Result.cy := 0;
@@ -477,49 +470,6 @@ begin
   end;
 
 end;
-
-
-procedure MakeImageGrayscale(Image: TPngImage; Amount: Byte = 255);
-// not used in lemmix
-
-  procedure GrayscaleRGB(var R, G, B: Byte);
-  var
-    X: Byte;
-  begin
-    X := (R * 77 + G * 150 + B * 29) shr 8;
-    R := ((R * (255 - Amount)) + (X * Amount) + 128) shr 8;
-    G := ((G * (255 - Amount)) + (X * Amount) + 128) shr 8;
-    B := ((B * (255 - Amount)) + (X * Amount) + 128) shr 8;
-  end;
-
-var
-  X, Y, PalCount: Integer;
-  Line: PRGBLine;
-  PaletteHandle: HPalette;
-  Palette: array[Byte] of TPaletteEntry;
-begin
-  //Don't do anything if the image is already a grayscaled one
-  if not (Image.Header.ColorType in [COLOR_GRAYSCALE, COLOR_GRAYSCALEALPHA]) then begin
-    if Image.Header.ColorType = COLOR_PALETTE then begin
-      //Grayscale every palette entry
-      PaletteHandle := Image.Palette;
-      PalCount := GetPaletteEntries(PaletteHandle, 0, 256, Palette);
-      for X := 0 to PalCount - 1 do
-        GrayscaleRGB(Palette[X].peRed, Palette[X].peGreen, Palette[X].peBlue);
-      SetPaletteEntries(PaletteHandle, 0, PalCount, Palette);
-      Image.Palette := PaletteHandle;
-    end
-    else begin
-      //Grayscale every pixel
-      for Y := 0 to Image.Height - 1 do begin
-        Line := Image.Scanline[Y];
-        for X := 0 to Image.Width - 1 do
-          GrayscaleRGB(Line[X].rgbtRed, Line[X].rgbtGreen, Line[X].rgbtBlue);
-      end;
-    end;
-  end;
-end;
-
 
 end.
 

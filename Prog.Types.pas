@@ -7,8 +7,8 @@ unit Prog.Types;
 interface
 
 uses
-  System.Types, System.SysUtils,
-  Vcl.Forms,
+  Types, SysUtils,
+  Forms,
   Base.Utils;
 
 type
@@ -127,8 +127,10 @@ begin
 end;
 
 class function TStyleDefHelper.IsDefaultName(const aName: string): Boolean;
+var
+  style: TStyleDef;
 begin
-  for var style: TStyleDef in DefaultStyles do
+  for style in DefaultStyles do
     if SameText(style.Name, aName) then
       Exit(True);
   Result := False;
