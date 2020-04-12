@@ -6,16 +6,16 @@
 
 {$resource '.\Data\Custom.RES'}
 
-{$resource '.\Data\orig.RES'}
-{$resource '.\Data\ohno.RES'}
-{$resource '.\Data\h93.RES'}
-{$resource '.\Data\h94.RES'}
-{$resource '.\Data\x91.RES'}
-{$resource '.\Data\x92.RES'}
+{$resource '.\Data\Orig.RES'}
+{$resource '.\Data\Ohno.RES'}
+{$resource '.\Data\H93.RES'}
+{$resource '.\Data\H94.RES'}
+{$resource '.\Data\X91.RES'}
+{$resource '.\Data\X92.RES'}
 
-{$resource '.\Data\orig_music.RES'}
-{$resource '.\Data\ohno_music.RES'}
-{$resource '.\Data\h94_music.RES'}
+{$resource '.\Data\Orig_music.RES'}
+{$resource '.\Data\Ohno_music.RES'}
+{$resource '.\Data\H94_music.RES'}
 
 
 
