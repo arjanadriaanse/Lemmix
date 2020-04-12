@@ -150,27 +150,24 @@ type
     class function AsString(const aValue: T): string; static; inline;
   end;
 
-  {
-  TFastObjectList<T: class> = class;
-
-  // fastest possible 'for in' loop support
-  TEnumeratorForFastList<T: class> = record
-  private
-    fIndex: Integer;
-    fList: TFastObjectList<T>;
-  public
-    function MoveNext: Boolean; inline;
-    function GetCurrent: T; inline;
-    property Current: T read GetCurrent;
-  end;
-  }
-
   // fast typed object list
   TFastObjectList<T: class> = class(TObjectList<T>)
   strict private
-  private
   public
-    //function GetEnumerator: TEnumeratorForFastList<T>; inline;
+  type
+    // fastest possible 'for in' loop support
+    TEnumerator = record
+    private
+      fIndex: Integer;
+      fList: TFastObjectList<T>;
+    public
+      function MoveNext: Boolean; inline;
+      function GetCurrent: T; inline;
+      property Current: T read GetCurrent;
+    end;
+
+  public
+    function GetEnumerator: TEnumerator; inline;
     function ValidIndex(ix: Integer): Boolean; inline;
     procedure CheckIndex(aIndex: Integer);
     function GetItem(aIndex: Integer): T; inline;
@@ -512,21 +509,18 @@ begin
   Result := TValue.From<T>(aValue).ToString;
 end;
 
-{ TEnumeratorForFastList<T> }
-{
-function TEnumeratorForFastList<T>.GetCurrent: T;
+{ TFastObjectList<T> }
+
+function TFastObjectList<T>.TEnumerator.GetCurrent: T;
 begin
-  Result := fList.List[fIndex];
+  Result := fList[fIndex];
 end;
 
-function TEnumeratorForFastList<T>.MoveNext: Boolean;
+function TFastObjectList<T>.TEnumerator.MoveNext: Boolean;
 begin
   Inc(fIndex);
   Result := fIndex < fList.Count;
 end;
-}
-
-{ TFastObjectList<T> }
 
 function TFastObjectList<T>.ValidIndex(ix: Integer): Boolean;
 begin
@@ -582,14 +576,12 @@ begin
   Result := Count = 0;
 end;
 
-{
-function TFastObjectList<T>.GetEnumerator: TEnumeratorForFastList<T>;
+function TFastObjectList<T>.GetEnumerator: TFastObjectList<T>.TEnumerator;
 begin
   // we do not use a record constructor. this is faster
   Result.fIndex := -1;
   Result.fList := Self;
 end;
-}
 
 function Scale(const i: Integer): Integer;
 begin
