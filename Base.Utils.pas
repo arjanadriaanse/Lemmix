@@ -10,7 +10,7 @@ interface
 uses
   LCLIntf, LMessages,
   Types, Classes, SysUtils, TypInfo, IniFiles, Math, Contnrs, Generics.Collections,
-  Rtti, FileUtil,
+  Rtti, FileUtil, BaseUnix, Unix,
   Forms, Graphics, Controls,
   GR32, GR32_LowLevel;
 
@@ -83,7 +83,7 @@ procedure ClearLog;
 function GetAppVersionString(out major, minor, release, build: Integer): string;
 
 // timing stuff
-//function QueryTimer: Int64; overload; inline;
+function QueryTimer: Int64; overload; inline;
 function MSBetween(const T1, T2: Int64): Int64; inline;
 
 // simple timer mechanism
@@ -457,12 +457,13 @@ begin
   Result := Format('%d.%d.%d', [major, minor, release]);
 end;
 
-{
 function QueryTimer: Int64;
+var
+  Counter: TTimeVal;
 begin
-  QueryPerformanceCounter(Result);
+  FPGetTimeOfDay(@Counter, nil);
+  Result := Int64(Counter.tv_sec) * 1000000000 + Int64(Counter.tv_usec) * 1000;
 end;
-}
 
 function MSBetween(const T1, T2: Int64): Int64;
 // returns the difference in milliseconds between 2 values, calculated with QueryTimer

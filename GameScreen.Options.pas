@@ -5,9 +5,9 @@ unit GameScreen.Options;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages,
-  System.Types, System.Classes, System.SysUtils, System.IOUtils, System.Generics.Collections, System.UITypes, System.Contnrs,
-  Vcl.Graphics, Vcl.Imaging.PngImage, Vcl.Controls, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Dialogs, Vcl.Forms, Vcl.GraphUtil, Vcl.Grids,
+  LCLIntf, LCLType, LMessages,
+  Types, Classes, SysUtils, Generics.Collections, UITypes, Contnrs,
+  Graphics, Controls, StdCtrls, ExtCtrls, Dialogs, Forms, GraphUtil, Grids,
   Base.Utils, Base.Bitmaps,
   Dos.Consts,
   Prog.Types, Prog.Base, Prog.Data, Prog.Cache,
@@ -20,9 +20,9 @@ type
   TGameScreenOptions = class(TBaseDosForm)
   public
     const
-      COLOR_DOS = clWebDarkSlateBlue;
-      COLOR_CUSTOM = clWebDarkOliveGreen;
-      COLOR_LEMMINI = clWebBrown;
+      COLOR_DOS = TColor($483D8B); //clWebDarkSlateBlue;
+      COLOR_CUSTOM = TColor($556B2F); //clWebDarkOliveGreen;
+      COLOR_LEMMINI = TColor($A52A2A); //clWebBrown;
   private
     fGrid: TDrawGrid;
     procedure Form_KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -57,11 +57,13 @@ begin
 end;
 
 procedure TGameScreenOptions.DoExitScreen(ok: Boolean);
+var
+  info: Consts.TStyleInformation;
 begin
   if not ok then
     CloseScreen(TGameScreenType.Menu)
   else begin
-    var info: Consts.TStyleInformation := GetCurrentInfo;
+    info:= GetCurrentInfo;
     if Assigned(info) then
       App.NewStyleName := info.Name;
     CloseScreen(TGameScreenType.Menu);
@@ -69,11 +71,14 @@ begin
 end;
 
 procedure TGameScreenOptions.BuildScreen;
+var
+  p: TPoint;
+  lab: TLabel;
 begin
   fGrid := TDrawGrid.Create(Self);
   fGrid.Parent := Self;
   fGrid.Align := alClient;
-  fGrid.AlignWithMargins := True;
+  //fGrid.AlignWithMargins := True;
   fGrid.ColCount := (fGrid.Width - Scale(24)) div Scale(320);
   fGrid.ScrollBars := ssNone;
   fGrid.RowCount := Consts.StyleInformationlist.Count div fGrid.ColCount;
@@ -86,20 +91,20 @@ begin
   fGrid.Color := clBlack;
   fGrid.ParentColor := True;
   fGrid.DefaultDrawing := False;
-  fGrid.DrawingStyle := TGridDrawingStyle.gdsClassic;
+  //fGrid.DrawingStyle := TGridDrawingStyle.gdsClassic;
   fGrid.BorderStyle := bsNone;
   fGrid.Options := fGrid.Options - [TGridOption.goDrawFocusSelected, TGridOption.goVertLine, TGridOption.goHorzLine, TGridOption.goRangeSelect];
 
-  var p: TPoint := SelectedInfoToCell(Consts.FindStyleInfo(App.Style.Name));
+  p := SelectedInfoToCell(Consts.FindStyleInfo(App.Style.Name));
   fGrid.Col := p.X;
   fGrid.Row := p.Y;
 
-  fGrid.Margins.SetBounds(8, 8, 8, 24);
+  //fGrid.Margins.SetBounds(8, 8, 8, 24);
   fGrid.OnDrawCell := Grid_DrawCell;
   fGrid.OnSelectCell := Grid_CanSelectCell;
   fGrid.OnDblClick := Grid_DblClick;
 
-  var lab: TLabel := TLabel.Create(Self);
+  lab := TLabel.Create(Self);
   lab.Parent := Self;
   lab.AutoSize := False;
   lab.Height := 20;
@@ -120,17 +125,21 @@ begin
 end;
 
 function TGameScreenOptions.CoordToLevelInfo(x, y: Integer): Consts.TStyleInformation;
+var
+  ix: Integer;
 begin
-  var ix: Integer := y * fGrid.ColCount + x;
+  ix := y * fGrid.ColCount + x;
   if not Consts.StyleInformationlist.ValidIndex(ix) then
     Exit(nil);
   Result := Consts.StyleInformationlist[ix];
 end;
 
 function TGameScreenOptions.SelectedInfoToCell(info: Consts.TStyleInformation): TPoint;
+var
+  ix: Integer;
 begin
   Result := Point(0, 0);
-  var ix: Integer := Consts.StyleInformationlist.IndexOf(info);
+  ix := Consts.StyleInformationlist.IndexOf(info);
   Result.Y := ix div fGrid.ColCount;
   Result.X := ix mod fGrid.ColCount;
 end;
@@ -158,6 +167,8 @@ var
   th, numberOfLevels: Integer;
   plural, txt: string;
   txtRect: TRect;
+  i: Integer;
+  style: TTextStyle;
 
 begin
   canv := fGrid.Canvas;
@@ -170,12 +181,12 @@ begin
     myColor := RGB(10,10,10)
   else if information.StyleDef = TStyleDef.User then begin
     if information.Family = TStyleFamily.DOS then
-      myColor := clWebDarkOliveGreen//TColorRec.Darkgreen
+      myColor := COLOR_CUSTOM //clWebDarkOliveGreen//TColorRec.Darkgreen
     else
-      myColor := clWebBrown;//TColorRec.Brown;
+      myColor := COLOR_LEMMINI; //clWebBrown;//TColorRec.Brown;
   end
   else
-    myColor := clWebDarkSlateBlue;//RGB(104, 88, 164); // purple
+    myColor := COLOR_DOS; //clWebDarkSlateBlue;//RGB(104, 88, 164); // purple
 
 //  if Assigned(information) and (gdSelected in aState) then
   //  myColor := GetShadowColor(myColor, -8);
@@ -189,7 +200,7 @@ begin
   else
     myShadowColor := GetShadowColor(myColor, -20);
 
-  for var i := 0 to Scale(4) - 1 do begin
+  for i := 0 to Scale(4) - 1 do begin
    canv.Brush.Color := myShadowColor;
    canv.FrameRect(aRect);
    aRect.Inflate(-1, -1);
@@ -214,7 +225,7 @@ begin
   if not Assigned(information) then
     canv.FillRect(aRect)
   else
-    GradientFillCanvas(canv, myColor, GetShadowColor(myColor, -5), aRect, TGradientDirection.gdVertical);
+    DrawVerticalGradient(canv, aRect, myColor, GetShadowColor(myColor, -5));
 
 
 //  aRect.Inflate(Scale(-2), Scale(-2));
@@ -244,6 +255,10 @@ begin
   canv.Font.Color := clWhite;//myColor;
   canv.Font.Style := [fsBold];
 
+  style.SingleLine := True;
+  style.Layout := tlTop;
+  style.Alignment := taCenter;
+
   th := canv.TextHeight('Wq');
   txtRect := aRect;
   Inc(txtRect.Top, Scale(8));
@@ -254,7 +269,7 @@ begin
   else
     txt := information.name;//canv.TextOut(x, y, information.Name);
 
-  canv.TextRect(txtRect, txt, [tfSingleLine, tfTop, tfCenter]);
+  canv.TextRect(txtRect, 0, 0, txt, style);
 
   // number of levels + author
 //  canv.Font.Color := clYellow;
@@ -270,7 +285,7 @@ begin
   else
     txt := numberOfLevels.ToString + ' level' + plural + ' by ' + information.Author;
 
-  canv.TextRect(txtRect, txt, [tfSingleLine, tfTop, tfCenter]);
+  canv.TextRect(txtRect, 0, 0, txt, style);
 
   // location
   th := canv.TextHeight('Wq');
@@ -283,7 +298,9 @@ begin
   else
     txt := 'Resource';
 
-  canv.TextRect(txtRect, txt, [tfSingleLine, tfTop, tfCenter, tfPathEllipsis]);
+  style.EndEllipsis := True;
+  canv.TextRect(txtRect, 0, 0, txt, style);
+  style.EndEllipsis := False;
 
   canv.Font.Color := GetShadowColor(myColor, 120);//clWhite; //clSilver;
   txtRect.Offset(0, txtRect.Height + Scale(4));
@@ -295,9 +312,10 @@ begin
   if txt.IsEmpty then txt := 'No info available';
 
   if canv.TextWidth(txt) < txtRect.Width then
-    canv.TextRect(txtRect, txt, [tfSingleLine, tfBottom{, tfCenter}])
+    style.Layout := tlBottom
   else
-    canv.TextRect(txtRect, txt, [TTextFormats.tfTop, TTextFormats.tfWordBreak]);
+    style.WordBreak := True;
+  canv.TextRect(txtRect, 0, 0, txt, style);
 end;
 
 end.

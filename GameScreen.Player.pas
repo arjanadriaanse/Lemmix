@@ -5,9 +5,9 @@ unit GameScreen.Player;
 interface
 
 uses
-  Winapi.Windows, Winapi.MMSystem,
-  System.Types, System.Classes, System.SysUtils, System.Math, System.Generics.Collections, System.UITypes,
-  Vcl.Controls, Vcl.Graphics, Vcl.Forms, Dialogs, Vcl.ExtCtrls, Vcl.Imaging.PngImage, Vcl.ClipBrd,
+  LCLIntf, LCLType,
+  Types, Classes, SysUtils, Math, Generics.Collections, UITypes,
+  Controls, Graphics, Forms, Dialogs, ExtCtrls, {Vcl.Imaging.PngImage,} ClipBrd,
   GR32, GR32_Image, GR32_Backends, GR32_Layers,
   Base.Utils, Base.Bitmaps,
   Dos.Consts,
@@ -105,7 +105,7 @@ type
     fScreenshotBuffer             : TBitmap;
   // overridden
   protected
-    procedure ScaleControlsForDpi(NewPPI: Integer); override;
+    //procedure ScaleControlsForDpi(NewPPI: Integer); override;
     procedure PrepareGameParams; override;
     procedure BeforeCloseScreen(aNextScreen: TGameScreenType); override;
   // internal properties
@@ -200,13 +200,14 @@ procedure TGameScreenPlayer.Application_Activate(Sender: TObject);
 var
 //  currentPos: TPoint;
   restoreMousePos: Boolean;
+  P: TPoint;
 begin
   GameScroll := TGameScroll.None;
   restoreMousePos := fApplicationWasDeactivated and not MouseClipRect.Contains(Mouse.CursorPos);
-  ClipCursor(@MouseClipRect);
+  //ClipCursor(@MouseClipRect);
 
   if restoreMousePos and (fMousePosBeforeDeactivation <> InvalidPoint) then begin
-    var P: TPoint := fMousePosBeforeDeactivation;
+    P := fMousePosBeforeDeactivation;
     fMousePosBeforeDeactivation := InvalidPoint;
     SetCursorPos(P.X, P.Y);
     P := Img.ScreenToClient(P);
@@ -226,7 +227,7 @@ begin
   fApplicationWasDeactivated := True;
   GameScroll := TGameScroll.None;
   fMousePosBeforeDeactivation := Mouse.CursorPos;
-  ClipCursor(nil);
+  //ClipCursor(nil);
 end;
 
 procedure TGameScreenPlayer.DoLock;
@@ -244,15 +245,15 @@ end;
 procedure TGameScreenPlayer.DoFreeMouseClip;
 begin
   Inc(fClipLock);
-  if fClipLock = 1 then
-    ClipCursor(nil);
+  //if fClipLock = 1 then
+    //ClipCursor(nil);
 end;
 
 procedure TGameScreenPlayer.DoRestoreMouseClip;
 begin
   Dec(fClipLock);
-  if fClipLock = 0 then
-    ClipCursor(@MouseClipRect);
+  //if fClipLock = 0 then
+    //ClipCursor(@MouseClipRect);
 end;
 
 procedure TGameScreenPlayer.GotoIteration(aTargetIteration: Integer);
@@ -284,9 +285,10 @@ procedure TGameScreenPlayer.CheckScroll;
     procedure CheckUpdateGameCursor;
     // #EL 2020-02-29. never noticed this all these years: when scrolling with keyboard the cursor was not updated.
     // And when the mouse was left or right at the border of the level the cursor was not updated as well.
+    var P: TPoint;
     begin
       if MouseScroll or KeyBoardScroll then begin
-        var P: TPoint := Mouse.CursorPos;
+        P := Mouse.CursorPos;
         P := Img.ScreenToClient(P);
         P := Img.ControlToBitmap(P);
         SetAdjustedGameCursorPoint(P);
@@ -427,6 +429,8 @@ begin
 end;
 
 procedure TGameScreenPlayer.Form_KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+  currTick: Int64;
 begin
   fLastShiftState := Shift;
 
@@ -485,7 +489,7 @@ begin
         VK_F11: Game.SetSelectedSkill(TSkillPanelButton.Pause);
         VK_F12: begin
                   // double keypress needed to prevent accidently nuking
-                  var currTick: Int64 := QueryTimer;
+                  currTick := QueryTimer;
                   if MSBetween(currTick, fLastNukeKeyTick) < INTERVAL_NUKE_KEY
                   then Game.SetSelectedSkill(TSkillPanelButton.Nuke)
                   else fLastNukeKeyTick := currTick;
@@ -656,7 +660,7 @@ begin
   LemCursorIconInfo.hbmMask := bmpMask.Handle;
   LemCursorIconInfo.hbmColor := bmpColor.Handle;
 
-  HCursor1 := CreateIconIndirect(LemCursorIconInfo);
+  HCursor1 := CreateIconIndirect(@LemCursorIconInfo);
   Screen.Cursors[PLAYCURSOR_DEFAULT] := HCursor1;
 
   img.Cursor := PLAYCURSOR_DEFAULT;
@@ -678,13 +682,14 @@ begin
   LemSelCursorIconInfo.hbmMask := bmpMask.Handle;
   LemSelCursorIconInfo.hbmColor := bmpColor.Handle;
 
-  HCursor2 := CreateIconIndirect(LemSelCursorIconInfo);
+  HCursor2 := CreateIconIndirect(@LemSelCursorIconInfo);
   Screen.Cursors[PLAYCURSOR_LEMMING] := HCursor2;
 
   bmpMask.Free;
   bmpColor.Free;
 end;
 
+{
 procedure TGameScreenPlayer.ScaleControlsForDpi(NewPPI: Integer);
 // do nothing (!)
 begin
@@ -692,6 +697,7 @@ begin
   // but we already place and size and scale them carefully ourselves, relative to the maximized form and currentdisplay.
   // we do not want any resizing from then on.
 end;
+}
 
 procedure TGameScreenPlayer.PrepareGameParams;
 {-------------------------------------------------------------------------------
@@ -701,6 +707,9 @@ var
   Sca: Integer;
   ConfigScale, offsetX, offsetY: Integer; // scale as stored in ini-file
   GameInfo: TGameInfoRec;
+  shape: TShape;
+  sr: TRect;
+  P: TPoint;
 begin
   ConfigScale := App.Config.ZoomFactor;
 
@@ -725,8 +734,8 @@ begin
   GameInfo.LevelLoadingInfo             := App.CurrentLevelInfo;
   GameInfo.GraphicSet                   := App.GraphicSet;
   GameInfo.SoundOpts                    := App.Config.SoundOptions;
-  GameInfo.UseParticles                 := App.Config.ShowParticles;
-  GameInfo.UseGradientBridges           := App.Config.GradientBridges;
+  GameInfo.UseParticles                 := App.Config.GetMiscOption(TMiscOption.ShowParticles);
+  GameInfo.UseGradientBridges           := App.Config.GetMiscOption(TMiscOption.GradientBridges);
   GameInfo.ShowReplayMessages           := TMiscOption.ShowReplayMessages in App.Config.MiscOptions;
   GameInfo.ShowFeedbackMessages         := TMiscOption.ShowFeedbackMessages in App.Config.MiscOptions;
   GameInfo.EnableSkillButtonsWhenPaused := TMiscOption.EnableSkillButtonsWhenPaused in App.Config.MiscOptions;
@@ -764,12 +773,12 @@ begin
 
   // almost invisible line around the game
   if (offsetY > 0) and (offsetY > 0) then begin
-    var shape: TShape := TShape.Create(Self);
+    shape := TShape.Create(Self);
     shape.Parent := Self;
     shape.Brush.Style := bsClear;
     shape.Pen.Color := RGB(6,6,8);
     shape.SendToBack;
-    var sr: TRect := Rect(img.Left, img.Top, img.Left + img.Width, SkillPanel.Top + SkillPanel.Height);
+    sr := Rect(img.Left, img.Top, img.Left + img.Width, SkillPanel.Top + SkillPanel.Height);
     sr.Inflate(1, 1);
     shape.BoundsRect := sr;
   end;
@@ -785,8 +794,8 @@ begin
   MaxScroll := 0;
 
   InitializeCursor;
-  var P: TPoint := CurrentDisplay.BoundsRect.CenterPoint;
-  ClipCursor(@MouseClipRect); // we first need to clip it. SetCursorPos acts strangely otherwise on multiple monitors
+  P := CurrentDisplay.BoundsRect.CenterPoint;
+  //ClipCursor(@MouseClipRect); // we first need to clip it. SetCursorPos acts strangely otherwise on multiple monitors
   SetCursorPos(P.X, P.Y);
 end;
 
@@ -840,6 +849,8 @@ begin
 end;
 
 procedure TGameScreenPlayer.Form_KeyPress(Sender: TObject; var Key: Char);
+var
+  bmp: TBitmap32;
 begin
   if Game.HyperSpeed then
     Exit;
@@ -862,7 +873,7 @@ begin
       end;
     '5':
       begin
-        if App.Config.UseCheatCodes then
+        if App.Config.GetMiscOption(TMiscOption.UseCheatCodes) then
           Game.Cheat;
       end;
     '+', '=': Game.ChangeMusicVolume(True);
@@ -941,8 +952,9 @@ begin
     // --------- UPPERCASE ------------
     'B':
       begin
+        {
         // todo: check if this can be done faster. on a high-res screen this takes some (visible) time.
-        var bmp: TBitmap32 := TBitmap32.Create;
+        bmp := TBitmap32.Create;
         try
           bmp.SetSize(CurrentDisplay.BoundsRect.Width, CurrentDisplay.BoundsRect.Height);
           Self.PaintTo(bmp.Canvas, 0, 0);
@@ -957,6 +969,7 @@ begin
         finally
           bmp.Free;
         end;
+        }
       end;
     'F':
       begin
@@ -1060,7 +1073,7 @@ begin
   DoLock;
   try
     s := '';
-    ClipCursor(nil);
+    //ClipCursor(nil);
     dlg := TOpenDialog.Create(nil);
     try
       dlg.FileName := '*.lrb';
@@ -1069,7 +1082,7 @@ begin
       SetFocus;
     finally
       dlg.free;
-      ClipCursor(@MouseClipRect);
+      //ClipCursor(@MouseClipRect);
     end;
     if s <> '' then begin
       StartReplayFromFile(s);
@@ -1081,6 +1094,8 @@ begin
 end;
 
 procedure TGameScreenPlayer.ShowMechanicsInformation;
+var
+  header: TReplayFileHeaderRec;
 begin
   DoLock;
   DoFreeMouseClip;
@@ -1092,7 +1107,7 @@ begin
         )
       end
       else begin
-        var header: TReplayFileHeaderRec := fgame.Recorder.CurrentHeader;
+        header := fgame.Recorder.CurrentHeader;
         DlgInfo(
           'Replay version = ' + header.Version.ToString + sLineBreak + sLineBreak +
           'Mechanics' + sLineBreak + sLineBreak + header.Mechanics.AsText(True),
@@ -1121,7 +1136,7 @@ begin
   Application.OnIdle := nil;
   Application.OnActivate := nil;
   Application.OnDeactivate := nil;
-  ClipCursor(nil);
+  //ClipCursor(nil);
 
   if aNextScreen <> TGameScreenType.Interrupted then begin
     Game.SetGameResult;

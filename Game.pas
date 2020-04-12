@@ -6,9 +6,9 @@ unit Game;
 interface
 
 uses
-  Winapi.Windows,
-  System.Types, System.Classes, System.Contnrs, System.SysUtils, System.Math, System.TypInfo, System.Generics.Collections,
-  Vcl.Forms, Vcl.Dialogs, Vcl.Controls, Vcl.Graphics, Vcl.ClipBrd, Vcl.Imaging.PngImage,
+  LCLIntf,
+  Types, Classes, Contnrs, SysUtils, Math, TypInfo, Generics.Collections,
+  Forms, Dialogs, Controls, Graphics, ClipBrd, //Imaging.PngImage,
   GR32, GR32_OrdinalMaps, GR32_Layers,
   Base.Utils, Base.Bitmaps,
   Dos.Structures, Dos.Consts, Dos.Bitmaps, Prog.Strings,
@@ -757,11 +757,13 @@ end;
 { TReplayCursor }
 
 constructor TReplayCursor.Create(aGame: TLemmingGame);
+var
+  bmp: TBitmap;
 begin
   inherited Create;
   fGame := aGame;
   fBitmap := TBitmap32.Create;
-  var bmp: TBitmap := TData.CreateCursorBitmap(Consts.StyleName, Consts.FilenameCursorHighlight);
+  bmp := TData.CreateCursorBitmap(Consts.StyleName, Consts.FilenameCursorHighlight);
   fBitmap.Assign(bmp);
   bmp.Free;
   fBitmap.ReplaceColor(SetAlpha(clBlack32, 255), 0);
@@ -912,6 +914,9 @@ procedure TLemmingGame.Prepare(const aInfo: TGameInfoRec);
 var
   Ani: TLemmingAnimationSet;
   Bmp: TBitmap32;
+  i, ix: Integer;
+  stream: TStream;
+  info: TLevelLoadingInformation;
 begin
   // copy info param
   fMechanics := aInfo.Style.Mechanics;
@@ -960,7 +965,7 @@ begin
   Ani.Load;
 
   // initialize explosion particle colors
-  for var i := 0 to 15 do
+  for i := 0 to 15 do
     fParticleColors[i] := fGraph.Palette[ParticleColorIndices[i]];
 
   // prepare masks for drawing
@@ -989,7 +994,7 @@ begin
   MineMasks[True].OnPixelCombine := CombineMaskPixels;
 
   // prepare animationbitmaps for drawing (set pixelcombine eventhandlers)
-  var ix: Integer := 0;
+  ix := 0;
   for Bmp in Ani.LemmingBitmaps do begin
     Bmp.DrawMode := dmCustom;
     if ix in [TLemmingAnimationSet.BRICKLAYING, TLemmingAnimationSet.BRICKLAYING_RTL] then
@@ -1002,7 +1007,7 @@ begin
   World.SetSize(GAME_BMPWIDTH, 160);
 
   // load particle array
-  var stream: TStream := TData.CreateDataStream(fStyle.Name, Consts.FilenameParticles, TDataType.Particles);
+  stream := TData.CreateDataStream(fStyle.Name, Consts.FilenameParticles, TDataType.Particles);
   try
     stream.Read(fParticles, stream.Size);
   finally
@@ -1013,7 +1018,7 @@ begin
     if not fUseShuffledMusic then
       MUSIC_INDEX := SoundMgr.AddMusicFromFileName(fLevelLoadingInfo.MusicFileName, fLevelLoadingInfo.MusicStreamType)
     else begin
-      var info := fStyle.LevelSystem.SelectRandomLevel;
+      info := fStyle.LevelSystem.SelectRandomLevel;
       if Assigned(info) and (info.MusicFileName <> '') then
         MUSIC_INDEX := SoundMgr.AddMusicFromFileName(info.MusicFileName, info.MusicStreamType)
     end;
@@ -1636,6 +1641,8 @@ var
   Steel: TSteel;
   Effect, V: Byte;
   MaxO: Integer;
+  i: Integer;
+  offsetX, offsetY: Integer;
 begin
 
   ObjectMap.SetSize((1647 + OBJMAPOFFSET) div 4, (175 + OBJMAPOFFSET) div 4);
@@ -1653,7 +1660,7 @@ begin
   else
     MaxO := ObjectInfos.Count - 1;
 
-  for var i := 0 to MaxO do begin
+  for i := 0 to MaxO do begin
     Inf := ObjectInfos[i];
     // 0..127   = triggered trap index
     // 128..255 = triggereffect (128 is DOM_NONE)
@@ -1664,8 +1671,8 @@ begin
     else
       V := Effect + 128;
 
-    var offsetY: Integer := Inf.Obj.Top and not 3 + Inf.MetaObj.TriggerTop;
-    var offsetX: Integer := Inf.Obj.Left and not 3 + Inf.MetaObj.TriggerLeft;
+    offsetY := Inf.Obj.Top and not 3 + Inf.MetaObj.TriggerTop;
+    offsetX := Inf.Obj.Left and not 3 + Inf.MetaObj.TriggerLeft;
 
     for y := offsetY to offsetY + Inf.MetaObj.TriggerHeight - 1 do
       for x := offsetX to offsetX + Inf.MetaObj.TriggerWidth - 1 do
@@ -1955,6 +1962,7 @@ procedure TLemmingGame.DrawLemmings;
 var
   L: TLemming;
   SrcRect, DstRect, DigRect: TRect;
+  OldCombine: TPixelCombineEvent;
   Digit: Integer;
 begin
   if HyperSpeed then
@@ -1975,7 +1983,7 @@ begin
         L.LAB.DrawTo(fTargetBitmap, DstRect, SrcRect)
       else begin
         // replay assign job highlight fotoflash effect
-        var OldCombine: TPixelCombineEvent := L.LAB.OnPixelCombine;
+        OldCombine := L.LAB.OnPixelCombine;
         L.LAB.OnPixelCombine := CombineLemmingHighlight;
         L.LAB.DrawTo(fTargetBitmap, DstRect, SrcRect);
         L.LAB.OnPixelCombine := OldCombine;
@@ -2819,6 +2827,8 @@ begin
 end;
 
 procedure TLemmingGame.IncrementIteration;
+var
+  entrance: TInteractiveObjectInfo;
 begin
   Inc(fCurrentIteration);
 
@@ -2870,7 +2880,7 @@ begin
     35:
       begin
         EntrancesOpened := True;
-        for var entrance: TInteractiveObjectInfo in Entrances do begin
+        for entrance in Entrances do begin
           entrance.Triggered := True;
           entrance.CurrentFrame := 1; // #EL 2020 corrected from 2 to 1
         end;
@@ -3324,6 +3334,8 @@ begin
 end;
 
 procedure TLemmingGame.CheckForPlaySoundEffect;
+var
+  i: Integer;
 begin
   if HyperSpeed then
     Exit;
@@ -3331,7 +3343,7 @@ begin
   if fSoundsToPlay.Count = 0 then
     Exit;
 
-  for var i: integer in fSoundsToPlay do begin
+  for i in fSoundsToPlay do begin
     SoundMgr.PlaySound(i);
   end;
 
@@ -3804,8 +3816,10 @@ begin
 end;
 
 procedure TLemmingGame.ChangeMusicVolume(up: Boolean);
+var
+  curr: Single;
 begin
-  var curr: Single := SoundMgr.GetMusicVolumne(MUSIC_INDEX);
+  curr := SoundMgr.GetMusicVolumne(MUSIC_INDEX);
   if up and (curr <= 0.9) then
     SoundMgr.SetMusicVolume(MUSIC_INDEX, curr + 0.1)
   else if (curr >= 0.1) then
@@ -4073,6 +4087,8 @@ end;
 procedure TRecorder.SaveToStream(S: TStream);
 var
   header: TReplayFileHeaderRec;
+  t, i: Integer;
+  item: TReplayItem;
   rec: TReplayRec;
 begin
 
@@ -4089,14 +4105,14 @@ begin
   header.Hash := fGame.fLevelLoadingInfo.GetLevelHash;
   header.ReplayGlitchPauseIterations := fGame.GlitchPauseIterations;
 
-  for var t := 1 to 32 do
+  for t := 1 to 32 do
     header.LevelTitle := ' ';
-  for var i := 1 to fGame.Level.Info.Title.Length do
+  for i := 1 to fGame.Level.Info.Title.Length do
     header.LevelTitle[i - 1] := AnsiChar(fGame.Level.Info.Title[i]);
 
   S.WriteBuffer(header, SizeOf(TReplayFileHeaderRec));
 
-  for var item: TReplayItem in List do begin
+  for item in List do begin
     rec.Check := 'R';
     rec.Iteration := item.Iteration;
     rec.ActionFlags := item.ActionFlags;
@@ -4175,12 +4191,16 @@ const
    end;
 
 
+var
+  s: string;
+  i: Integer;
+  item: TReplayItem;
 begin
   L := TStringList.Create;
   mech := fGame.Mechanics;
   hash := fGame.fLevelLoadingInfo.GetLevelHash;
 
-  var s: string := 'Lemmix Replay Textfile recorded with ' + Consts.FullProgramName;
+  s := 'Lemmix Replay Textfile recorded with ' + Consts.FullProgramName;
   AddString(s);
   AddString(StringOfChar('-', s.Length));
   AddString('Title: ' + Trim(fGame.Level.Info.Title));
@@ -4213,8 +4233,8 @@ begin
   AddString(' Rec   Frame  Pausing Action        Skill     Button     RR  lem    x    y   mx   my prio MouseGlitch');
   AddString(StringOfChar('-', 100));
 
-  var i: Integer := 0;
-  for var item: TReplayItem in List do begin
+  i := 0;
+  for item in List do begin
     AddString(
       LeadZeroStr(i, 4) + '  ' +
       LeadZeroStr(item.Iteration, 6) + '  ' +
@@ -4271,6 +4291,7 @@ procedure TLemmingGame.SaveCurrentFrameToPng;
 var
   fileName: string;
 begin
+  {
   filename := Consts.PathToScreenShots + fStyle.Name + '_' + fLevelLoadingInfo.Section.SectionName + fLevelLoadingInfo.LevelIndex.ToString + '.png';
   if ForceDir(filename) then begin
     fTargetBitmap.SaveToPng(fileName);
@@ -4290,7 +4311,8 @@ begin
     AddCustomMessage('screenshot');
   end
   else
-    AddCustomMessage('screenshot fail');
+  }
+  AddCustomMessage('screenshot fail');
 end;
 
 end.

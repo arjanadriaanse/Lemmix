@@ -5,7 +5,7 @@ unit GameScreen.LevelCode;
 interface
 
 uses
-  Windows, Classes, Controls, Graphics, MMSystem, Forms, ClipBrd,
+  LCLIntf, LCLType, Classes, Controls, Graphics, Forms, ClipBrd,
   GR32, GR32_Image, GR32_Layers,
   Base.Utils,
   Dos.Structures,
@@ -49,7 +49,7 @@ type
 implementation
 
 uses
-  System.SysUtils, Form.Base;
+  SysUtils, Form.Base;
 
 { TGameScreenLevelCode }
 
@@ -151,7 +151,7 @@ begin
 
   info := FindLevelByCode(s);
 
-  if not Assigned(info) and App.Config.UseCheatCodes then
+  if not Assigned(info) and App.Config.GetMiscOption(TMiscOption.UseCheatCodes) then
     info := App.Style.LevelSystem.FindLevelBySectionNameAndNumber(LevelCode);
 
   if Assigned(info) then begin
@@ -198,7 +198,7 @@ begin
 
   LastCheatMessage := '';
 
-  if not App.Config.UseCheatCodes then
+  if not App.Config.GetMiscOption(TMiscOption.UseCheatCodes) then
     Exit;
 
   LastCheatMessage := 'Cheatcodes Enabled!';
@@ -209,12 +209,15 @@ end;
 
 function TGameScreenLevelCode.FindLevelByCode(const aCode: string): TLevelLoadingInformation;
 // look in cache and find the level
+var
+  items: TArray<TStyleCache.TLevelCacheItem>;
+  item: TStyleCache.TLevelCacheItem;
 begin
   Result := nil;
-  var items: TArray<TStyleCache.TLevelCacheItem> := App.StyleCache.FindLevelsByCode(aCode);
+  items := App.StyleCache.FindLevelsByCode(aCode);
   if Length(items) = 0 then
     Exit;
-  for var item: TStyleCache.TLevelCacheItem in items do begin
+  for item in items do begin
     if item.StyleName = Consts.StyleName then begin
       Result := App.Style.LevelSystem.FindLevelByIndex(item.SectionIndex, item.LevelIndex);
       Exit;
@@ -240,8 +243,8 @@ begin
           if CheckCheatCode then
           begin
             // toggle cheat enabled
-            App.Config.UseCheatCodes := True;//not App.UseCheatCodes;
-            App.Config.UseCheatScrollingInPreviewScreen := True;//not App.UseCheatScrollingInPreviewScreen;
+            App.Config.SetMiscOption(TMiscOption.UseCheatCodes, True);//not App.UseCheatCodes;
+            App.Config.SetMiscOption(TMiscOption.UseCheatScrollingInPreviewScreen, True);//not App.UseCheatScrollingInPreviewScreen;
             UpdateCheatMessage;
             //DrawMessage('cheatmode enabled');
             Exit;
@@ -273,6 +276,8 @@ procedure TGameScreenLevelCode.Form_KeyPress(Sender: TObject; var Key: Char);
 var
   OldC, C: Char;
   OldPos: Integer;
+  s: string;
+  i: Integer;
 begin
   if ScreenIsClosing then
     Exit;
@@ -285,11 +290,11 @@ begin
     case C of
       ^V:
         begin
-          var s := Clipboard.AsText;
+          s := Clipboard.AsText;
           s := s.Trim;
           if s.Length = 10 then begin
             LevelCode := s;
-            for var i := 1 to 10 do begin
+            for i := 1 to 10 do begin
               CursorPosition := i;
               DrawChar(i, False);
             end;

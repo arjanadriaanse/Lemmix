@@ -12,9 +12,9 @@ unit Form.Main;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages,
-  System.UITypes, System.SysUtils, System.Classes, System.IOUtils,
-  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.Imaging.PngImage, Vcl.StdCtrls,
+  LCLIntf, LCLType, LMessages,
+  UITypes, SysUtils, Classes,
+  Graphics, Controls, Forms, Dialogs, ExtCtrls, StdCtrls,
   Base.Utils, Base.Bitmaps,
   Form.Base, Form.Message,
   Dos.Compression, Dos.Structures,
@@ -26,7 +26,7 @@ uses
   GameScreen.Finder, GameScreen.Player;
 
 type
-  TFormMain = class(TBaseForm, IMainForm)
+  TFormMain = class(TBaseForm, IMainForm, IStyleCacheFeedback)
   private
     type
       TStartupFiletype = (
@@ -45,7 +45,7 @@ type
     procedure HideLoadingLabel;
     procedure LoadingFeedback(const state: string);
     procedure Form_Activate(Sender: TObject);
-    procedure LMStart(var Msg: TMessage); message LM_START;
+    procedure LMStart(var Msg: TLMessage); message LM_START;
     function ShowScreen<T: TBaseDosForm>: TGameScreenType;
     procedure InitDisplay;
     procedure SwitchToNextMonitor; // IMainForm support
@@ -155,7 +155,7 @@ begin
   fLoadingLabel.Hide;
 end;
 
-procedure TFormMain.LMStart(var Msg: TMessage);
+procedure TFormMain.LMStart(var Msg: TLMessage);
 begin
   Msg.Result := 1;
   Run;
@@ -164,7 +164,7 @@ end;
 procedure TFormMain.Form_Activate(Sender: TObject);
 begin
   OnActivate := nil;
-  Application.OnMessage := App_Message;
+  //Application.OnMessage := App_Message;
   PostMessage(Handle, LM_START, 0, 0);
 end;
 
@@ -187,14 +187,16 @@ end;
 function TFormMain.CheckLoadDAT(const aFilename: string): TStyleCache.TLevelCacheItem;
 // try to find the first level in a DAT file
 var
+  cmp: TDosDatDecompressor;
   LVLCheck: Boolean;
   sectionCount: Integer;
   dosSections: TDosDatSectionList;
   LVL: TLVLRec;
   hash: UInt64;
+  itemArray: TArray<TStyleCache.TLevelCacheItem>;
 begin
   Result := nil;
-  var cmp: TDosDatDecompressor := TDosDatDecompressor.Create;
+  cmp := TDosDatDecompressor.Create;
   try
     sectionCount := cmp.GetNumberOfSectionsOnly(aFileName, {out} LVLCheck);
     // check these are levels
@@ -208,7 +210,7 @@ begin
       dosSections[0].DecompressedData.Position := 0;
       TLevelLoader.LoadLVLFromStream(dosSections[0].DecompressedData, LVL);
       hash := TLevelHasher.ShortHash(LVL);
-      var itemArray: TArray<TStyleCache.TLevelCacheItem> := App.StyleCache.FindLevelsByHash(hash);
+      itemArray := App.StyleCache.FindLevelsByHash(hash);
       if Length(itemArray) = 0 then
         Exit;
       Result := itemArray[0];
@@ -224,17 +226,20 @@ function TFormMain.CheckLoadLVL(const aFilename: string): TStyleCache.TLevelCach
 // try find LVL by hash
 var
   LVL: TLVLRec;
+  stream: TBytesStream;
+  hash: UInt64;
+  itemArray: TArray<TStyleCache.TLevelCacheItem>;
 begin
   Result := nil;
-  var stream: TBytesStream := TBytesStream.Create;
+  stream := TBytesStream.Create;
   try
     stream.LoadFromFile(aFilename);
     if stream.Size <> LVL_SIZE then
       Exit(nil);
     stream.Position := 0;
     TLevelLoader.LoadLVLFromStream(stream, LVL);
-    var hash: UInt64 := TLevelHasher.ShortHash(LVL);
-    var itemArray: TArray<TStyleCache.TLevelCacheItem> := App.StyleCache.FindLevelsByHash(hash);
+    hash := TLevelHasher.ShortHash(LVL);
+    itemArray := App.StyleCache.FindLevelsByHash(hash);
     if Length(itemArray) = 0 then
       Exit;
     Result := itemArray[0];
@@ -246,13 +251,14 @@ end;
 function TFormMain.CheckLoadHashcode(const aHash: string): TStyleCache.TLevelCacheItem;
 var
   hash: UInt64;
+  itemArray: TArray<TStyleCache.TLevelCacheItem>;
 begin
   Result := nil;
   if Length(aHash) <> 16 then
     Exit;
   if not TryStrToUInt64('$' + aHash, hash) then
     Exit;
-  var itemArray: TArray<TStyleCache.TLevelCacheItem> := App.StyleCache.FindLevelsByHash(hash);
+  itemArray := App.StyleCache.FindLevelsByHash(hash);
   if Length(itemArray) = 0 then
     Exit;
   Result := itemArray[0];
@@ -295,7 +301,7 @@ begin
   if aFilename.Trim.IsEmpty then
     Exit;
 
-  ext := ExtractFileExt(aFilename).ToUpper;
+  ext := ExtractFileExt(aFilename);
   if ext = '' then begin
     Result := CheckLoadHashcode(aFilename);
     if Assigned(Result) then
@@ -327,12 +333,14 @@ end;
 
 procedure TFormMain.SwitchToNextMonitor;
 // only triggered from the menuscreen by the IMainForm interface
+var
+  current: Integer;
 begin
   if Screen.MonitorCount <= 1 then
     Exit;
   if not (CurrentDisplay.CurrentForm is TGameMenuScreen) then
     Exit;
-  var current: Integer := CurrentDisplay.MonitorIndex;
+  current := CurrentDisplay.MonitorIndex;
   Inc(current);
   if current >= Screen.MonitorCount then
     current := 0;
@@ -480,7 +488,7 @@ begin
 
     InitDisplay;
     App.StyleCache := TStyleCache.Create;
-    App.StyleCache.Load(LoadingFeedback);
+    App.StyleCache.Load(Self);
 
     // when debugging parameters set fCurrentParamString *right down this line*
 
@@ -498,7 +506,7 @@ begin
         TGameScreenType.LevelCode   : NewScreen := ShowScreen<TGameScreenLevelCode>;
         TGameScreenType.Options     : NewScreen := ShowScreen<TGameScreenOptions>;
         TGameScreenType.Finder      : NewScreen := ShowScreen<TGameScreenFinder>;
-        TGameScreenType.Config      : NewScreen := ShowScreen<TGameScreenConfig>;
+        //TGameScreenType.Config      : NewScreen := ShowScreen<TGameScreenConfig>;
         TGameScreenType.Interrupted : NewScreen := CheckLoad(True);
         else
           Break;

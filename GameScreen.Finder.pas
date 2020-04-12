@@ -8,10 +8,10 @@ interface
 // todo: grid index out of range
 
 uses
-  Winapi.Windows, Winapi.Messages,
-  System.Types, System.Classes, System.SysUtils, System.IOUtils, System.Generics.Collections, System.UITypes, System.Contnrs, System.Variants,
-  System.Generics.Defaults,
-  Vcl.Graphics, Vcl.Imaging.PngImage, Vcl.Controls, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Dialogs, Vcl.Forms, Vcl.GraphUtil, Vcl.Grids, Vcl.ClipBrd,
+  LCLIntf, LCLType, LMessages,
+  Types, Classes, SysUtils, Generics.Collections, UITypes, Contnrs, Variants,
+  Generics.Defaults,
+  Graphics, Controls, StdCtrls, ExtCtrls, Dialogs, Forms, GraphUtil, Grids, ClipBrd,
   Base.Utils, Base.Bitmaps,
   Dos.Consts,
   Prog.Types, Prog.Base, Prog.Data, Prog.Cache,
@@ -91,9 +91,9 @@ type
       );
 
       ColumnColors : array[0..TRecord.property_count - 1] of TColor = (
-        clSilver, clWebRoyalBlue, clWebRoyalBlue, clNone, clWhite,
+        clSilver, TColor($4169E1), TColor($4169E1), clNone, clWhite,
         clFuchsia, clFuchsia,clFuchsia,clFuchsia,clFuchsia,clFuchsia,clFuchsia,clFuchsia,clFuchsia,clFuchsia,clFuchsia,clFuchsia,
-        clWebOrangeRed, clWebOrangeRed, clWebCornFlowerBlue, clWebOrangeRed, clWebOrangeRed, clWebOrangeRed, clWebOrangeRed, clWebRoyalBlue, clWebRoyalBlue, clRed, clWebLightCoral);
+        TColor($FF4500), TColor($FF4500), TColor($6495ED), TColor($FF4500), TColor($FF4500), TColor($FF4500), TColor($FF4500), TColor($4169E1), TColor($4169E1), clRed, TColor($F08080));
     const
       DEF_ROWHEIGHT = 21;
       HEADER_ROWCOUNT = 3;
@@ -159,11 +159,13 @@ type
 { TGameScreenFinder.TRecord }
 
 constructor TGameScreenFinder.TRecord.Create(cacheIndex: Integer);
+var
+  info: Consts.TStyleInformation;
 begin
   RefIndex := cacheIndex;
   Ref := App.StyleCache.FlatList[RefIndex];
   Duplicates := Length(App.StyleCache.FindLevelsByHash(Ref.LevelHash)) - 1;
-  var info: Consts.TStyleInformation := Consts.FindStyleInfo(Ref.StyleName);
+  info := Consts.FindStyleInfo(Ref.StyleName);
   if Assigned(info) then begin
     if info.StyleDef < TStyleDef.User then
       myStyle := sOriginal
@@ -303,9 +305,11 @@ end;
 procedure TGameScreenFinder.BuildScreen;
 
    function TW(cnt: Integer): Integer;
+   var
+     a, b: Integer;
    begin
-     var a: Integer := fGrid.Canvas.TextWidth(StringOfChar('W', cnt));
-     var b: Integer := fGrid.Canvas.TextWidth(StringOfChar('y', cnt));
+     a := fGrid.Canvas.TextWidth(StringOfChar('W', cnt));
+     b := fGrid.Canvas.TextWidth(StringOfChar('y', cnt));
      Result := (a + b) div 2;
    end;
 
@@ -314,6 +318,7 @@ var
   currLevel: TLevelLoadingInformation;
   cachedItem: TStyleCache.TLevelCacheItem;
   newRec: TRecord;
+  i: Integer;
 //  totalColWidths: Integer;
 begin
   initiallySelectedRecord := nil;
@@ -325,7 +330,7 @@ begin
 
   // get all record refs
   fRecordList.Clear;
-  for var i := 0 to App.StyleCache.FlatList.Count - 1 do begin
+  for i := 0 to App.StyleCache.FlatList.Count - 1 do begin
 
     newRec := TRecord.Create(i);
     fRecordList.Add(newRec);
@@ -344,8 +349,8 @@ begin
 
   fGrid.Parent := Self;
   fGrid.Align := alClient;
-  fGrid.AlignWithMargins := True;
-  fGrid.Margins.SetBounds(8, 8, 8, 8);
+  //fGrid.AlignWithMargins := True;
+  //fGrid.Margins.SetBounds(8, 8, 8, 8);
   fGrid.ColCount := (fGrid.Width - Scale(24)) div Scale(320);
   fGrid.ScrollBars := ssNone;
   fGrid.RowCount := fRecordList.Count + 3;
@@ -357,43 +362,43 @@ begin
   fGrid.Color := clBlack;
   fGrid.ParentColor := True;
   fGrid.DefaultDrawing := False;
-  fGrid.DrawingStyle := TGridDrawingStyle.gdsClassic;
+  //fGrid.DrawingStyle := TGridDrawingStyle.gdsClassic;
   fGrid.BorderStyle := bsNone;
   fGrid.Options := fGrid.Options
                    - [TGridOption.goDrawFocusSelected, TGridOption.goVertLine, TGridOption.goHorzLine, TGridOption.goRangeSelect, TGridOption.goFixedVertLine, TGridOption.goFixedHorzLine]
-                   + [TGridOption.goColSizing, TGridOption.goFixedRowClick];
+                   + [TGridOption.goColSizing{, TGridOption.goFixedRowClick}];
 
 
-  const TW4 = TW(4);
+  //const TW(4) = TW(4);
 
   fGrid.ColWidths[TRecord.prop_refindex]      := TW(6);
-  fGrid.ColWidths[TRecord.prop_sectionindex]  := TW4;
-  fGrid.ColWidths[TRecord.prop_levelindex]    := TW4;
-  fGrid.ColWidths[TRecord.prop_stylename]     := TW4 * 4;
-  fGrid.ColWidths[TRecord.prop_leveltitle]    := TW4 * 8;
-  fGrid.ColWidths[TRecord.prop_releaserate]   := TW4;
-  fGrid.ColWidths[TRecord.prop_lemmingscount] := TW4;
-  fGrid.ColWidths[TRecord.prop_rescuecount]   := TW4;
-  fGrid.ColWidths[TRecord.prop_timelimit]     := TW4;
-  fGrid.ColWidths[TRecord.prop_climbercount]  := TW4;
-  fGrid.ColWidths[TRecord.prop_floatercount]  := TW4;
-  fGrid.ColWidths[TRecord.prop_bombercount]   := TW4;
-  fGrid.ColWidths[TRecord.prop_blockercount]  := TW4;
-  fGrid.ColWidths[TRecord.prop_buildercount]  := TW4;
-  fGrid.ColWidths[TRecord.prop_bashercount]   := TW4;
-  fGrid.ColWidths[TRecord.prop_minercount]    := TW4;
-  fGrid.ColWidths[TRecord.prop_diggercount]   := TW4;
-  fGrid.ColWidths[TRecord.prop_graphicset]    := TW4;
-  fGrid.ColWidths[TRecord.prop_graphicsetex]  := TW4;
-  fGrid.ColWidths[TRecord.prop_superlemming]  := TW4;
-  fGrid.ColWidths[TRecord.prop_objectcount]   := TW4;
-  fGrid.ColWidths[TRecord.prop_terraincount]  := TW4;
-  fGrid.ColWidths[TRecord.prop_entrancecount] := TW4;
-  fGrid.ColWidths[TRecord.prop_exitcount]     := TW4;
-  fGrid.ColWidths[TRecord.prop_levelhash]     := TW4 * 4;
-  fGrid.ColWidths[TRecord.prop_levelcode]     := TW4 * 3;
-  fGrid.ColWidths[TRecord.prop_duplicates]    := TW4;
-  fGrid.ColWidths[TRecord.prop_sourcefile]    := TW4 * 8;
+  fGrid.ColWidths[TRecord.prop_sectionindex]  := TW(4);
+  fGrid.ColWidths[TRecord.prop_levelindex]    := TW(4);
+  fGrid.ColWidths[TRecord.prop_stylename]     := TW(4) * 4;
+  fGrid.ColWidths[TRecord.prop_leveltitle]    := TW(4) * 8;
+  fGrid.ColWidths[TRecord.prop_releaserate]   := TW(4);
+  fGrid.ColWidths[TRecord.prop_lemmingscount] := TW(4);
+  fGrid.ColWidths[TRecord.prop_rescuecount]   := TW(4);
+  fGrid.ColWidths[TRecord.prop_timelimit]     := TW(4);
+  fGrid.ColWidths[TRecord.prop_climbercount]  := TW(4);
+  fGrid.ColWidths[TRecord.prop_floatercount]  := TW(4);
+  fGrid.ColWidths[TRecord.prop_bombercount]   := TW(4);
+  fGrid.ColWidths[TRecord.prop_blockercount]  := TW(4);
+  fGrid.ColWidths[TRecord.prop_buildercount]  := TW(4);
+  fGrid.ColWidths[TRecord.prop_bashercount]   := TW(4);
+  fGrid.ColWidths[TRecord.prop_minercount]    := TW(4);
+  fGrid.ColWidths[TRecord.prop_diggercount]   := TW(4);
+  fGrid.ColWidths[TRecord.prop_graphicset]    := TW(4);
+  fGrid.ColWidths[TRecord.prop_graphicsetex]  := TW(4);
+  fGrid.ColWidths[TRecord.prop_superlemming]  := TW(4);
+  fGrid.ColWidths[TRecord.prop_objectcount]   := TW(4);
+  fGrid.ColWidths[TRecord.prop_terraincount]  := TW(4);
+  fGrid.ColWidths[TRecord.prop_entrancecount] := TW(4);
+  fGrid.ColWidths[TRecord.prop_exitcount]     := TW(4);
+  fGrid.ColWidths[TRecord.prop_levelhash]     := TW(4) * 4;
+  fGrid.ColWidths[TRecord.prop_levelcode]     := TW(4) * 3;
+  fGrid.ColWidths[TRecord.prop_duplicates]    := TW(4);
+  fGrid.ColWidths[TRecord.prop_sourcefile]    := TW(4) * 8;
 
 //  // todo: we have to find out what is going wrong here on High-Dpi
 //  totalColWidths := 0;
@@ -411,7 +416,7 @@ begin
   fGrid.OnDrawCell := Grid_DrawCell;
   fGrid.OnDblClick := Grid_DblClick;
   fGrid.OnSelectCell := Grid_SelectCell;
-  fGrid.OnFixedCellClick := Grid_FixedCellClick;
+  //fGrid.OnFixedCellClick := Grid_FixedCellClick;
   fGrid.OnKeyDown := Grid_KeyDown;
   fGrid.OnKeyPress := Grid_KeyPress;
 
@@ -463,7 +468,7 @@ begin
     Exit;
   P := Point(aRect.Left + Scale(2), aRect.Top + Scale(4));
   fGrid.Canvas.Pen.Color := aColor;
-  DrawArrow(fGrid.Canvas, Vcl.GraphUtil.sdDown, P, Scale(5));
+  DrawArrow(fGrid.Canvas, GraphUtil.sdDown, P, Scale(5));
 end;
 
 procedure TGameScreenFinder.PaintArrowUp(const aRect: TRect; aColor: TColor);
@@ -475,18 +480,19 @@ begin
     Exit;
   P := Point(aRect.Left + Scale(2), aRect.Top + Scale(4));
   fGrid.Canvas.Pen.Color := aColor;
-  DrawArrow(fGrid.Canvas, Vcl.GraphUtil.sdUp, P, Scale(5));
+  DrawArrow(fGrid.Canvas, GraphUtil.sdUp, P, Scale(5));
 end;
 
 procedure TGameScreenFinder.SetSelectedRecord(item: TRecord; aRelativePosition: Integer);
 var
   newTop: Integer;
   found: Boolean;
+  i: Integer;
 begin
   if (item = nil) and (fGrid.RowCount <= HEADER_ROWCOUNT) then
     Exit;
   found := False;
-  for var i := FIRST_DATAROW to fGrid.RowCount - 1 do
+  for i := FIRST_DATAROW to fGrid.RowCount - 1 do
     if GetItem(i) = item then begin
       fGrid.Row := i;
       found := True;
@@ -509,6 +515,7 @@ end;
 
 procedure TGameScreenFinder.Sort(aCol: Integer; Asc: Boolean);
 begin
+  {
   Lock;
   try
     fRefList.Sort(
@@ -542,11 +549,14 @@ begin
   finally
     Unlock;
   end;
+  }
 end;
 
 procedure TGameScreenFinder.TryCloseAndPlay;
+var
+  item: TRecord;
 begin
-  var item: TRecord := GetItem(fGrid.Row);
+  item := GetItem(fGrid.Row);
   if not Assigned(item) then
     Exit;
   App.NewStyleName := item.Ref.StyleName;
@@ -583,29 +593,35 @@ begin
 end;
 
 procedure TGameScreenFinder.Filter;
+var
+  filterlist: TList<Integer>;
+  i, ix: Integer;
+  rec: TRecord;
+  accept: Boolean;
+  prop: Integer;
 begin
 
   Lock;
   try
     fRefList.Clear;
 
-    var filterlist: TList<Integer> := TList<Integer>.Create;
+    filterlist := TList<Integer>.Create;
     try
 
-      for var i := 0 to TRecord.property_count - 1 do
+      for i := 0 to TRecord.property_count - 1 do
         if not fUserFilters[i].IsEmpty then
           filterList.Add(i);
 
       if filterlist.Count = 0 then begin
-        for var ix := 0 to fRecordList.Count - 1 do
+        for ix := 0 to fRecordList.Count - 1 do
            fRefList.Add(ix);
       end
       else begin
-        var ix: Integer := 0;
-        for var rec: TRecord in fRecordList do begin
+        ix := 0;
+        for rec in fRecordList do begin
 
-          var accept: Boolean := True;
-          for var prop: integer in filterlist do begin
+          accept := True;
+          for prop in filterlist do begin
             accept := accept and rec.Filter(prop, fUserFilters[prop]);
             if not accept then
               break;
@@ -630,31 +646,38 @@ begin
 end;
 
 procedure TGameScreenFinder.ClearFilters;
+var
+  i: Integer;
 begin
-  for var i := 0 to TRecord.property_count - 1 do
+  for i := 0 to TRecord.property_count - 1 do
     fUserFilters[i] := '';
   Filter;
 end;
 
 procedure TGameScreenFinder.CopyGridToClipBoard;
+const
+  tab: char = Chr(9);
 var
+  list: TStringList;
   s: string;
+  p, i: Integer;
+  rec: TRecord;
 begin
-  const tab: char = Chr(9);
-  var list: TStringList := TStringList.Create;
+
+  list := TStringList.Create;
 
   s := '';
-  for var p := 0 to TRecord.property_count - 1 do begin
+  for p := 0 to TRecord.property_count - 1 do begin
     s := s + Headers[p];
     if p < TRecord.property_count - 1 then
       s := s + tab;
   end;
   list.Add(s);
 
-  for var i: Integer in fReflist do begin
-    var rec: TRecord := fRecordList[i];
+  for i in fReflist do begin
+    rec := fRecordList[i];
     s := '';
-    for var p := 0 to TRecord.property_count - 1 do begin
+    for p := 0 to TRecord.property_count - 1 do begin
       s := s + rec.GetText(p);
       if p < TRecord.property_count - 1 then
         s := s + tab;
@@ -678,6 +701,8 @@ var
   canv: TCanvas;
   txt: string;
   rowHighlight: Boolean;
+  size: TSize;
+  yDelta: Integer;
 begin
   if fLockCount <> 0 then
     Exit;
@@ -754,9 +779,8 @@ begin
     if aCol in [TRecord.prop_levelhash, TRecord.prop_levelcode] then
       canv.Font.Name := 'Lucida Console';
 
-    var size: TSize;
     GetTextExtentPoint(canv.Handle, 'Wq', 2, size);
-    var yDelta := (Scale(DEF_ROWHEIGHT) - size.cy) div 2;
+    yDelta := (Scale(DEF_ROWHEIGHT) - size.cy) div 2;
     SetBkMode(canv.Handle, TRANSPARENT);
 //    canv.TextFlags := ETO_CLIPPED;
     canv.TextOut(aRect.Left + Scale(3), aRect.Top + yDelta{+ Scale(2)}, txt);
@@ -849,11 +873,14 @@ begin
 end;
 
 procedure TGameScreenFinder.Grid_KeyPress(Sender: TObject; var Key: Char);
+var
+  item: TRecord;
+  col: Integer;
 begin
   if Key = ^C then begin
-    var item: TRecord := GetItem(fGrid.Row);
+    item := GetItem(fGrid.Row);
     if Assigned(item) then begin
-      var col: Integer := fGrid.Col;
+      col := fGrid.Col;
       //if col <> TRecord.prop_sourcefile then
         ClipBoard.AsText := item.GetText(col)
       //else

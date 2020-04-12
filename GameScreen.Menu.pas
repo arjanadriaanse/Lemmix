@@ -6,9 +6,9 @@ unit GameScreen.Menu;
 interface
 
 uses
-  Winapi.Windows, Winapi.MMSystem,
-  System.Types, System.Classes, System.SysUtils,
-  Vcl.Controls, Vcl.Graphics, Vcl.Forms,
+  LCLIntf, LCLType,
+  Types, Classes, SysUtils,
+  Controls, Graphics, Forms,
   GR32, GR32_Image, GR32_Layers,
   Base.Utils, Base.Bitmaps,
   Dos.Structures,
@@ -203,6 +203,7 @@ var
   Mainpal: TArrayOfColor32;
   Tmp: TBitmap32;
   i: Integer;
+  descriptor: string;
 begin
   Tmp := TBitmap32.Create;
   ScreenImg.BeginUpdate;
@@ -263,7 +264,7 @@ begin
     if Consts.StyleDef <> TStyleDef.User then
       DrawPurpleTextCentered(ScreenImg.Bitmap, SProgramTexts[Consts.StyleDef] + sLineBreak + sLineBreak + Consts.FullProgramName, YPos_ProgramText)
     else begin
-      var descriptor: string := App.Style.StyleInformation.Description;
+      descriptor := App.Style.StyleInformation.Description;
       if descriptor.Length > 24 then
         descriptor := App.Style.Name;
       DrawPurpleTextCentered(ScreenImg.Bitmap, Format(SProgramTexts[TStyleDef.User] + sLineBreak + sLineBreak + Consts.FullProgramName, [descriptor]), YPos_ProgramText);
@@ -326,8 +327,10 @@ end;
 procedure TGameMenuScreen.NextSection(Forwards: Boolean);
 
     procedure Change;
+    var
+      sect: TSection;
     begin
-      var sect: TSection := App.Style.LevelSystem.SectionList[CurrentSection];
+      sect := App.Style.LevelSystem.SectionList[CurrentSection];
       App.CurrentLevelInfo := sect.LevelLoadingInformationList.First;
     end;
 
@@ -466,7 +469,7 @@ begin
     Exit;
   Sleep(1);
   Done := False;
-  CurrTime := TimeGetTime;
+  CurrTime := GetTickCount;
   if UserPausing then
     Exit;
 

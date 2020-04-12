@@ -5,7 +5,7 @@ unit Form.Base;
 interface
 
 uses
-  LCLIntf, LMessages,
+  LCLIntf, LCLType, LMessages,
   SysUtils, Classes,
   Graphics, Controls, Forms, Dialogs,
   Gr32,
@@ -46,13 +46,13 @@ implementation
 procedure TBaseForm.AfterConstruction;
 begin
   inherited;
-  ScaleForCurrentDpi;
+  //ScaleForCurrentDpi;
 end;
 
 constructor TBaseForm.Create(aOwner: TComponent);
 begin
   inherited CreateNew(aOwner);
-  StyleElements := [];
+  //StyleElements := [];
   Caption := 'Lemmix';
   Color := clBlack;
   BorderStyle := bsNone;
@@ -102,7 +102,7 @@ end;
 procedure TBaseDosForm.CreateParams(var Params: TCreateParams);
 begin
   inherited CreateParams(Params);
-  Params.WindowClass.Style := Params.WindowClass.Style or CS_OWNDC; // maybe faster screen output
+  //Params.WindowClass.Style := Params.WindowClass.Style or CS_OWNDC; // maybe faster screen output
 end;
 
 procedure TBaseDosForm.PrepareGameParams;

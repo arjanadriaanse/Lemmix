@@ -5,9 +5,9 @@ unit Game.Sound;
 interface
 
 uses
-vcl.dialogs,
-  Winapi.Windows, Winapi.MMSystem,
-  System.Classes, System.Contnrs, System.SysUtils, System.Math,
+  Dialogs,
+  LCLIntf,// SDL,
+  Classes, Contnrs, SysUtils, Math,
   Base.Utils,
   Prog.Types, Prog.Base, Prog.Data,
   BASS;
@@ -110,7 +110,7 @@ implementation
 class procedure SoundLibrary.Init;
 begin
   // check version
-  if (HIWORD(BASS_GetVersion) <> BASSVERSION) then
+  if (HI(BASS_GetVersion) <> BASSVERSION) then
     Exit;
   // Initialize audio: default device, 44100hz, stereo, 16 bits
   fLibEnabled := BASS_Init(-1, 44100, 0, 0, nil);
@@ -160,6 +160,8 @@ begin
 end;
 
 class procedure SoundLibrary.PlaySound(aSound: TSound);
+var
+  tmpHandle: DWORD;
 begin
   if (aSound.DataPtr = nil) or (aSound.DataSize <= 0) then
     Exit;
@@ -167,15 +169,15 @@ begin
     // overlapping sounds
     if (BASS_ChannelIsActive(aSound.Handle) = BASS_ACTIVE_PLAYING)
     and (BASS_ChannelGetPosition(aSound.Handle, BASS_POS_BYTE) >= BASS_ChannelSeconds2Bytes(aSound.Handle, 0.1)) then begin
-      var tmpHandle: DWORD := BASS_StreamCreateFile(True, aSound.DataPtr, 0, aSound.DataSize, BASS_UNICODE or BASS_STREAM_AUTOFREE);
+      tmpHandle := BASS_StreamCreateFile(True, aSound.DataPtr, 0, aSound.DataSize, BASS_UNICODE or BASS_STREAM_AUTOFREE);
     	BASS_ChannelPlay(tmpHandle, True);
       Exit;
     end;
 
   	BASS_ChannelPlay(aSound.Handle, True);
-  end
-  else
-    Winapi.MMSystem.PlaySound(aSound.DataPtr, 0, SND_ASYNC or SND_MEMORY); // fallback for sounds on the winapi
+  end;
+  //else
+  //  Winapi.MMSystem.PlaySound(aSound.DataPtr, 0, SND_ASYNC or SND_MEMORY); // fallback for sounds on the winapi
 end;
 
 //class procedure SoundLibrary.StopSound(aSound: TSound);
@@ -288,8 +290,10 @@ begin
 end;
 
 function TSoundMgr.AddSoundFromFileName(const aFileName: string): Integer;
+var
+  snd: TSound;
 begin
-  var snd := TSound.Create(aFileName);
+  snd := TSound.Create(aFileName);
   Result := fSounds.Add(snd);
 end;
 

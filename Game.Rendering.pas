@@ -18,7 +18,7 @@ unit Game.Rendering;
 interface
 
 uses
-  System.Types, System.Classes, System.SysUtils, System.Contnrs, System.Generics.Collections,
+  Types, Classes, SysUtils, Contnrs, Generics.Collections,
   GR32, GR32_LowLevel,
   Base.Utils,
   Prog.Types,
@@ -45,7 +45,7 @@ type
     property Original: TBitmap32 read fOriginal;
   end;
 
-  TDrawList = class(TObjectList) // todo: use fastobjectlist
+  TDrawList = class(TObjectList<TDrawItem>) // todo: use fastobjectlist
   private
     function GetItem(Index: Integer): TDrawItem;
   protected
@@ -167,7 +167,7 @@ end;
 
 function TDrawList.GetItem(Index: Integer): TDrawItem;
 begin
-  Result := inherited Get(Index);
+  Result := inherited GetItem(Index);
 end;
 
 procedure TDrawList.Insert(Index: Integer; Item: TDrawItem);
@@ -315,6 +315,12 @@ end;
 procedure TRenderInfoRec.CheckOrRepair(out errorCount: Integer);
 const
   method = 'TRenderInfoRec.Validate';
+var
+  levelTitle: string;
+  o: TInteractiveObject;
+  t: TTerrain;
+  terrainCheckList: TFastObjectList<TTerrain>;
+  objectCheckList: TFastObjectList<TInteractiveObject>;
 begin
   errorCount := 0;
 
@@ -325,7 +331,7 @@ begin
   if Level = nil then
     DoThrow('Level not assigned', method);
 
-  var levelTitle: string := Level.Info.Title.Trim;
+  levelTitle := Level.Info.Title.Trim;
 
   if GraphicSet.MetaObjectList.Count <> GraphicSet.ObjectBitmaps.Count then
     DoThrow('Graphicset metaobjects count mismatch with objects'
@@ -336,14 +342,14 @@ begin
     Exit;
 
   if not Repair then begin
-    for var o: TInteractiveObject in Level.InteractiveObjects do
+    for o in Level.InteractiveObjects do
      if (o.Identifier < 0) or (o.Identifier >= GraphicSet.ObjectBitmaps.Count) then
         DoThrow('Invalid object identifier (' + o.Identifier.ToString + '). '
                  + Pred(GraphicSet.ObjectBitmaps.Count).ToString
                  + '. The error occurred in level ' + levelTitle + sLineBreak
                  + 'Object listindex = ' + Level.InteractiveObjects.IndexOf(o).ToString, method);
 
-    for var t: TTerrain in Level.Terrains do
+    for t in Level.Terrains do
       if (t.Identifier < 0) or (t.Identifier >= GraphicSet.TerrainBitmaps.Count) then
         DoThrow('Invalid terrain identifier (' + t.identifier.ToString + '). The maximum is ' + Pred(GraphicSet.TerrainBitmaps.Count).ToString
                 + '. The error occurred in level ' + levelTitle + sLineBreak
@@ -351,21 +357,21 @@ begin
   end
   else begin
 
-    var terrainCheckList := TFastObjectList<TTerrain>.Create(False);
-    var objectCheckList := TFastObjectList<TInteractiveObject>.Create(False);
+    terrainCheckList := TFastObjectList<TTerrain>.Create(False);
+    objectCheckList := TFastObjectList<TInteractiveObject>.Create(False);
 
     try
-      for var o: TInteractiveObject in Level.InteractiveObjects do
+      for o in Level.InteractiveObjects do
         if (o.Identifier < 0) or (o.Identifier >= GraphicSet.ObjectBitmaps.Count) then
           objectCheckList.Add(o);
 
-      for var t: TTerrain in Level.Terrains do
+      for t in Level.Terrains do
         if (t.Identifier < 0) or (t.Identifier >= GraphicSet.TerrainBitmaps.Count) then
           terrainCheckList.Add(t);
 
-      for var o: TInteractiveObject in objectCheckList do
+      for o in objectCheckList do
         Level.InteractiveObjects.Remove(o);
-      for var t: TTerrain in terrainCheckList do
+      for t in terrainCheckList do
         Level.Terrains.Remove(t);
 
       errorCount := terrainCheckList.Count + objectCheckList.Count;

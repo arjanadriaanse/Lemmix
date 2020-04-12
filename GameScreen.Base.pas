@@ -5,8 +5,8 @@ unit GameScreen.Base;
 interface
 
 uses
-  Winapi.Windows,
-  System.Classes, Vcl.Controls, Vcl.Graphics, Vcl.Forms, System.SysUtils, Vcl.Dialogs,
+  LCLIntf,
+  Classes, Controls, Graphics, Forms, SysUtils, Dialogs,
   GR32, GR32_Image, GR32_Layers,
   Dos.Structures,
   Base.Utils, Base.Bitmaps,
@@ -152,7 +152,7 @@ begin
       Update;
       Sleep(fCloseDelay);
     end;
-    if App.Config.UseFadeOut then
+    if App.Config.GetMiscOption(TMiscOption.UseFadeOut) then
       FadeOut;
   end;
 end;
@@ -168,7 +168,7 @@ begin
   fBackBuffer := TBitmap32.Create;
   fMainDatExtractor := TMainDatExtractor.Create;
   fStretched := DEF_STRETCHED;
-  if not App.Config.ShowDefaultCursor then begin
+  if not App.Config.GetMiscOption(TMiscOption.ShowDefaultCursor) then begin
     Cursor := crNone;
     ScreenImg.Cursor := crNone;
   end;

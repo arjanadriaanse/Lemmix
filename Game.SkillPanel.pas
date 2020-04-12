@@ -4,7 +4,7 @@ unit Game.SkillPanel;
 
 interface
 uses
-  System.Types, Classes, Controls, SysUtils, System.Math,
+  Types, Classes, Controls, SysUtils, Math,
   GR32, GR32_Image, GR32_Layers,
   Dos.Compression,
   Dos.Structures,
@@ -441,14 +441,15 @@ end;
 procedure TSkillPanelToolbar.SetInfoCursorLemming(const Lem: string; Num: Integer);
 var
   S: string;
+  i: Integer;
 begin
   if Lem <> '' then begin
     S := (Lem + ' ' + IntToStr(Num)).PadRight(14);
-    for var i := 1 to 14 do
+    for i := 1 to 14 do
       fNewDrawStr[i] := S[i];
   end
   else begin
-    for var i := 1 to 14 do
+    for i := 1 to 14 do
       fNewDrawStr[i] := ' ';
   end;
 end;
@@ -456,46 +457,51 @@ end;
 procedure TSkillPanelToolbar.SetInfoAlternative(const info: string);
 var
   S: string;
+  i: Integer;
 begin
   S := info.PadRight(14);
-  for var i := 1 to 14 do
+  for i := 1 to 14 do
     fNewDrawStr[i] := S[i];
 end;
 
 procedure TSkillPanelToolbar.SetInfoLemmingsOut(Num: Integer); // todo: rename
 var
   S: string;
+  i: Integer;
 begin
   S := Num.ToString.PadRight(5);
-  for var i := 1 to 5 do
+  for i := 1 to 5 do
     fNewDrawStr[18 + i] := S[i]
 end;
 
 procedure TSkillPanelToolbar.SetInfoLemmingsIn(Num, Max: Integer); // todo: rename
 var
   S: string;
+  i: Integer;
 begin
   S := Percentage(Max, Num).ToString + '%';
   // todo: optional real number lemstrings
-  for var i := 1 to 5 do
+  for i := 1 to 5 do
     fNewDrawStr[26 + i] := S[i];
 end;
 
 procedure TSkillPanelToolbar.SetInfoMinutes(Num: Integer);
 var
   S: string;
+  i: Integer;
 begin
   S := Num.ToString.PadLeft(2);
-  for var i := 1 to 2 do
+  for i := 1 to 2 do
     fNewDrawStr[35 + i] := S[i];
 end;
 
 procedure TSkillPanelToolbar.SetInfoSeconds(Num: Integer);
 var
   S: string;
+  i: Integer;
 begin
   S := Num.ToString.PadLeft(2, '0');
-  for var i := 1 to 2 do
+  for i := 1 to 2 do
     fNewDrawStr[38 + i] := S[i];
 end;
 

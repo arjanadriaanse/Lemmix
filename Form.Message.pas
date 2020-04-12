@@ -5,9 +5,9 @@ interface
 {$include lem_directives.inc}
 
 uses
-  Winapi.Windows,
-  System.Types, System.Classes, System.SysUtils,
-  Vcl.Controls, Vcl.StdCtrls, Vcl.ExtCtrls, Vcl.Forms, Vcl.Imaging.PngImage, Vcl.Graphics,
+  LCLIntf, LCLType,
+  Types, Classes, SysUtils,
+  Controls, StdCtrls, ExtCtrls, Forms, Graphics,
   Base.Utils,
   Form.Base;
 
@@ -94,7 +94,7 @@ begin
   R.Create(0, 0, fLabel.Width, 0);
 //  fLabel.Width := w;
   canvas.Font := Self.Font;
-  DrawText(Canvas.Handle, Msg, Length(Msg), R, DT_EXPANDTABS or DT_CALCRECT or DT_WORDBREAK);
+  DrawText(Canvas.Handle, PChar(Msg), Length(Msg), R, DT_EXPANDTABS or DT_CALCRECT or DT_WORDBREAK);
 
   // just in case of an exception and currentdisplay is empty
   if CurrentDisplay.BoundsRect.Height = 0 then
@@ -121,8 +121,10 @@ end;
 
 procedure TFormMessage.InternalInvoke(const s: string; aType: TMessageType; const aFontname: string = '');
 var
-  png: TPngImage;
+  //png: TPngImage;
+  txt: string;
 begin
+  {
   try
     png := TPngImage.Create;
     try
@@ -138,11 +140,12 @@ begin
   except
     // eat it
   end;
+  }
 
   if not aFontname.IsEmpty then
     Font.Name := aFontname;
 
-  var txt: string := s;
+  txt := s;
   if txt.Length > 1024 then
     txt := Copy(txt, 1, 1024);
   txt := WrapText(txt, 80);
@@ -152,8 +155,10 @@ begin
 end;
 
 class procedure TFormMessage.Invoke(const s: string; aType: TMessageType; const aFontname: string = '');
+var
+  f: TFormMessage;
 begin
-  var f: TFormMessage := TFormMessage.Create(nil);
+  f := TFormMessage.Create(nil);
   try
     f.InternalInvoke(s, aType, aFontname);
   finally

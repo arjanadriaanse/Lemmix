@@ -5,8 +5,8 @@ unit GameScreen.Preview;
 interface
 
 uses
-  Winapi.Windows, System.Classes, Vcl.Controls, Vcl.Graphics,
-  System.SysUtils,
+  LCLIntf, LCLType, Classes, Controls, Graphics,
+  SysUtils,
   GR32, GR32_Image, GR32_Layers,
   Base.Utils,
   Dos.Consts, Dos.Structures,
@@ -186,7 +186,7 @@ end;
 
 procedure TGamePreviewScreen.ShowNextLevel(forwards: Boolean);
 begin
-  if not App.Config.UseCheatScrollingInPreviewScreen then
+  if not App.Config.GetMiscOption(TMiscOption.UseCheatScrollingInPreviewScreen) then
     Exit;
   if forwards then begin
     App.CurrentLevelInfo := App.CurrentLevelInfo.Next;

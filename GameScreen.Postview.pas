@@ -5,9 +5,9 @@ unit GameScreen.Postview;
 interface
 
 uses
-  Winapi.Windows,
-  System.Classes, System.SysUtils,
-  Vcl.Controls, Vcl.ClipBrd,
+  LCLIntf, LCLType,
+  Classes, SysUtils,
+  Controls, ClipBrd,
   Gr32, Gr32_Image, Gr32_Layers,
   Base.Utils,
   Dos.Consts,

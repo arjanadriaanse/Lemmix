@@ -15,9 +15,8 @@ uses
 type
   // the style cache builds lists of all styles with levelhashes + titles.
   // this is needed to be able to quickly find levelhashes, levelcodes, replayfiles
-  TStyleCacheFeedback = class
-  public
-    procedure Proc(const s: string); virtual; abstract;
+  IStyleCacheFeedback = interface
+    procedure LoadingFeedback(const s: string); virtual; abstract;
   end;
 
   TStyleCache = class
@@ -127,7 +126,7 @@ type
     fCodeCache: TObjectDictionary<string, TLevelCacheList>; // key=levelcode, value=levels which have this levelcode
     fTitleCache: TObjectDictionary<TLVLTitle, TLevelCacheList>; // key=leveltitle, value=levels which have this title
 //    fExactCache : TObjectDictionary<TExactEntry, TLevelCacheItem>;
-    fOnFeedback: TStyleCacheFeedback; // simple feedback during load
+    fOnFeedback: IStyleCacheFeedback; // simple feedback during load
     fLastState: string;
     procedure Feedback(const state: string);
     function ReadHeader(s: TStream; var header: THeaderRec): Boolean;
@@ -139,7 +138,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Load(const aFeedbackProc: TStyleCacheFeedback);
+    procedure Load(const aFeedbackProc: IStyleCacheFeedback);
     function GetCacheFilenames(fullName: Boolean = True): TArray<string>;
     function FindLevelsByHash(const aHash: UInt64): TArray<TLevelCacheItem>;
     function FindLevelsByCode(const aLevelCode: string): TArray<TLevelCacheItem>;
@@ -293,7 +292,7 @@ begin
   if fLastState <> state then begin
     fLastState := state;
     if Assigned(fOnFeedback) then
-      fOnFeedback.Proc(state);
+      fOnFeedback.LoadingFeedback(state);
   end;
 end;
 
@@ -520,7 +519,7 @@ begin
   end;
 end;
 
-procedure TStyleCache.Load(const aFeedbackProc: TStyleCacheFeedback);
+procedure TStyleCache.Load(const aFeedbackProc: IStyleCacheFeedback);
 const
   method = 'Load';
 var
