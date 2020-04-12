@@ -23,7 +23,7 @@ uses
   Prog.Types, Prog.Base, Prog.App, Prog.Data, Prog.Cache,
   Game, Game.Sound, Game.Rendering,
   GameScreen.Base, GameScreen.Menu, GameScreen.LevelCode, GameScreen.Preview, GameScreen.Postview, GameScreen.Options,
-  GameScreen.Finder, GameScreen.Config, GameScreen.Player;
+  GameScreen.Finder, GameScreen.Player;
 
 type
   TFormMain = class(TBaseForm, IMainForm)

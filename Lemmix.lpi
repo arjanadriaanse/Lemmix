@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="10"/>
+    <Version Value="11"/>
     <General>
       <Flags>
         <MainUnitHasUsesSectionForAllUnits Value="False"/>
@@ -15,9 +15,6 @@
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
     </General>
-    <VersionInfo>
-      <StringTable ProductVersion=""/>
-    </VersionInfo>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
     </BuildModes>
@@ -25,9 +22,10 @@
       <Version Value="2"/>
     </PublishOptions>
     <RunParams>
-      <local>
-        <FormatVersion Value="1"/>
-      </local>
+      <FormatVersion Value="2"/>
+      <Modes Count="1">
+        <Mode0 Name="default"/>
+      </Modes>
     </RunParams>
     <RequiredPackages Count="2">
       <Item1>
@@ -37,7 +35,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="39">
+    <Units Count="38">
       <Unit0>
         <Filename Value="Lemmix.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -103,107 +101,105 @@
         <IsPartOfProject Value="True"/>
       </Unit15>
       <Unit16>
-        <Filename Value="GameScreen.Config.pas"/>
+        <Filename Value="GameScreen.Finder.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit16>
       <Unit17>
-        <Filename Value="GameScreen.Finder.pas"/>
+        <Filename Value="GameScreen.LevelCode.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit17>
       <Unit18>
-        <Filename Value="GameScreen.LevelCode.pas"/>
+        <Filename Value="GameScreen.Menu.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit18>
       <Unit19>
-        <Filename Value="GameScreen.Menu.pas"/>
+        <Filename Value="GameScreen.Options.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit19>
       <Unit20>
-        <Filename Value="GameScreen.Options.pas"/>
+        <Filename Value="GameScreen.Player.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit20>
       <Unit21>
-        <Filename Value="GameScreen.Player.pas"/>
+        <Filename Value="GameScreen.Postview.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit21>
       <Unit22>
-        <Filename Value="GameScreen.Postview.pas"/>
+        <Filename Value="GameScreen.Preview.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit22>
       <Unit23>
-        <Filename Value="GameScreen.Preview.pas"/>
+        <Filename Value="Level.Base.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit23>
       <Unit24>
-        <Filename Value="Level.Base.pas"/>
+        <Filename Value="Level.Hash.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit24>
       <Unit25>
-        <Filename Value="Level.Hash.pas"/>
+        <Filename Value="Level.Loader.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit25>
       <Unit26>
-        <Filename Value="Level.Loader.pas"/>
+        <Filename Value="Meta.Structures.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit26>
       <Unit27>
-        <Filename Value="Meta.Structures.pas"/>
+        <Filename Value="Prog.Base.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit27>
       <Unit28>
-        <Filename Value="Prog.Base.pas"/>
+        <Filename Value="Prog.App.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit28>
       <Unit29>
-        <Filename Value="Prog.App.pas"/>
+        <Filename Value="Prog.Config.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit29>
       <Unit30>
-        <Filename Value="Prog.Config.pas"/>
+        <Filename Value="Prog.Data.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit30>
       <Unit31>
-        <Filename Value="Prog.Data.pas"/>
+        <Filename Value="Prog.Cache.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit31>
       <Unit32>
-        <Filename Value="Prog.Cache.pas"/>
+        <Filename Value="Prog.Strings.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit32>
       <Unit33>
-        <Filename Value="Prog.Strings.pas"/>
+        <Filename Value="Prog.Types.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit33>
       <Unit34>
-        <Filename Value="Prog.Types.pas"/>
+        <Filename Value="Styles.Factory.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit34>
       <Unit35>
-        <Filename Value="Styles.Factory.pas"/>
+        <Filename Value="Styles.Base.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit35>
       <Unit36>
-        <Filename Value="Styles.Base.pas"/>
+        <Filename Value="Styles.Dos.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit36>
       <Unit37>
-        <Filename Value="Styles.Dos.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit37>
-      <Unit38>
         <Filename Value="Styles.User.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit38>
+      </Unit37>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>
     <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir)"/>
+      <OtherUnitFiles Value="GR32PNG"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
       <SyntaxOptions>
-        <SyntaxMode Value="delphi"/>
+        <SyntaxMode Value="Delphi"/>
       </SyntaxOptions>
     </Parsing>
     <Linking>

@@ -25,7 +25,6 @@ uses
   Game.Sound in 'Game.Sound.pas',
   Game in 'Game.pas',
   GameScreen.Base in 'GameScreen.Base.pas',
-  GameScreen.Config in 'GameScreen.Config.pas',
   GameScreen.Finder in 'GameScreen.Finder.pas',
   GameScreen.LevelCode in 'GameScreen.LevelCode.pas',
   GameScreen.Menu in 'GameScreen.Menu.pas',
