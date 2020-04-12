@@ -9,9 +9,9 @@ unit Styles.User;
 interface
 
 uses
-vcl.dialogs,
+dialogs,
 
-  System.Classes, System.SysUtils, System.IOUtils, System.Generics.Collections, System.Character,
+  Classes, SysUtils, FileUtil, Generics.Collections, Character,
   Base.Utils,
   Dos.Consts, Dos.Compression, Dos.Structures,
   Prog.Types, Prog.Base,
@@ -103,9 +103,11 @@ begin
 end;
 
 function TUserStyle.GetMechanics: TMechanics;
+var
+ info: Consts.TStyleInformation;
 begin
   Result := DOSOHNO_MECHANICS;
-  var info: Consts.TStyleInformation := Consts.FindStyleInfo(Name);
+  info := Consts.FindStyleInfo(Name);
   if Assigned(info) then
     Result := info.UserMechanics; // style.config indicated a mapping
 end;
@@ -159,7 +161,8 @@ const method = 'GetNumberOfLevelsFromLevelDATFiles';
 // fills count as fake object to avoid dupliace calculations
 var
   cmp: TDosDatDecompressor;
-  cnt: Integer;
+  ix, cnt: Integer;
+  levelfile: string;
   LVLCheck: Boolean;
 begin
   if fLevelDATFiles.Count = 0 then
@@ -168,8 +171,8 @@ begin
   Result := 0;
   cmp := TDosDatDecompressor.Create;
   try
-    var ix: Integer := 0;
-    for var levelfile: string in fLevelDATFiles do begin
+    ix := 0;
+    for levelfile in fLevelDATFiles do begin
       cnt := cmp.GetNumberOfSectionsOnly(path + levelfile, {out} LVLCheck);
       if not LVLCheck or (cnt = 0) then
         Throw('Invalid levelfile encountered ' + path + levelfile, method);
@@ -200,10 +203,12 @@ const
 
     function FindDigit(const aFilename: string; out filenameOnly: string): Integer;
     // todo: maybe check there is only one digit
+    var
+      C: Char;
     begin
       filenameOnly := ExtractFileName(aFileName);
-      for var C: Char in filenameOnly do
-        if C.IsDigit then
+      for C in filenameOnly do
+        if IsDigit(C) then
           Exit(StrToInt(C));
       Result := -1;
     end;
@@ -211,14 +216,16 @@ const
 var
   path: string;
   musicpath: string;
-  groundFilenames: TArray<string>;
-  graphicFilenames: TArray<string>;
-  leveldatFilenames: TArray<string>;
+  groundFilenames: TStringList;
+  graphicFilenames: TStringList;
+  leveldatFilenames: TStringList;
   leveldatDictionary: TDictionary<string, Integer>;
-  customlevelFilenames: TArray<string>;
-  musicFilenames: TArray<string>;
-  mp3Filenames: TArray<string>;
-  ix: Integer;
+  customlevelFilenames: TStringList;
+  musicFilenames: TStringList;
+  mp3Filenames: TStringList;
+  groundfile, graphicfile, levelfile, lvlfile: string;
+  ix, i: Integer;
+  nrOfLevels: Integer;
   filenameOnly: string;
   foundGroundIndices: set of Byte;
   foundGraphicIndices: set of Byte;
@@ -226,6 +233,7 @@ var
   currentLevelIndex: Integer;
   section: TSection;
   levelInfo: TLevelLoadingInformation;
+  entry: TAnalyzedEntry;
   templevelList: TFastObjectList<TAnalyzedEntry>;
   tempDictionary: TDictionary<TEntry, Boolean>;
   totalDATLevels: Integer;
@@ -238,7 +246,7 @@ begin
 
   mapping := Style.StyleInformation.UserGraphicsMapping;
   graphicsmapped := mapping <> TLevelGraphicsMapping.Default;
-  musicFilenames := [];
+  //musicFilenames := [];
 
   foundGroundIndices := [];
   foundGraphicIndices := [];
@@ -252,35 +260,38 @@ begin
   try
     // gather all files
     if not graphicsmapped then begin
-      groundFilenames := TDirectory.GetFiles(path, 'ground*o.dat');
-      graphicFilenames := TDirectory.GetFiles(path, 'vgagr*.dat');
+      groundFilenames := FindAllFiles(path, 'ground*o.dat');
+      graphicFilenames := FindAllFiles(path, 'vgagr*.dat');
     end;
 
     // gather dat level files
-    leveldatFilenames := TDirectory.GetFiles(path, '*lev*.dat');
+    leveldatFilenames := FindAllFiles(path, '*lev*.dat');
 
     // gather lvl level files
+    {
     var LVLFilter: TDirectory.TFilterPredicate :=
       function(const Path: string; const SearchRec: TSearchRec): Boolean
       begin
         Result := SearchRec.Size = LVL_SIZE;
       end;
     customlevelFilenames := TDirectory.GetFiles(path, '*.LVL', LVLFilter);
+    }
+    customlevelFilenames := FindAllFiles(path, '*.LVL');
 
-    if TDirectory.Exists(musicpath) then begin
-      musicFilenames := TDirectory.GetFiles(musicpath, '*.MOD');
-      mp3Filenames := TDirectory.GetFiles(musicpath, '*.MP3');
-      musicFileNames := musicFilenames + mp3Filenames;
-      TArray.Sort<string>(musicFileNames)
+    if DirectoryExists(musicpath) then begin
+      musicFilenames := FindAllFiles(musicpath, '*.MOD');
+      mp3Filenames := FindAllFiles(musicpath, '*.MP3');
+      musicFileNames.AddStrings(mp3Filenames);
+      musicFileNames.Sort;
     end;
 
     // check if there are any levels
-    if Length(leveldatFilenames) + Length(customlevelFilenames) = 0 then
+    if leveldatFilenames.Count + customlevelFilenames.Count = 0 then
       Throw('No level files found for style '+ Style.Name, method);
 
     // analyze ground filenames
     if not graphicsmapped then begin
-      for var groundfile: string in groundFileNames do begin
+      for groundfile in groundFileNames do begin
         ix := FindDigit(groundfile, filenameOnly);
         if ix >= 0 then begin
           fGroundFiles.Add(ix, filenameOnly);
@@ -289,7 +300,7 @@ begin
       end;
 
       // analyze graphic filenames
-      for var graphicfile: string in graphicFilenames do begin
+      for graphicfile in graphicFilenames do begin
         ix := FindDigit(graphicfile, filenameOnly);
         if ix >= 0 then begin
           fGraphicFiles.Add(ix, filenameOnly);
@@ -303,12 +314,12 @@ begin
       Throw('Mismatch in number of groundfiles and graphicfiles', method);
 
     // add level DAT filenames
-    for var levelfile: string in leveldatFilenames do
+    for levelfile in leveldatFilenames do
       fLevelDATFiles.Add(ExtractFileName(levelfile));
     fLevelDATFiles.Sort; // we sort these dat-files by name
 
     // add level LVL filenames
-    for var lvlfile: string in customlevelFilenames do
+    for lvlfile in customlevelFilenames do
       fLevelLVLFiles.Add(ExtractFileName(lvlfile));
     fLevelLVLFiles.Sort;
 
@@ -330,9 +341,9 @@ begin
     currentSectionIndex := 0;
     currentLevelIndex := 0;
     ix := 0;
-    for var levelfile: string in fLevelDATFiles do begin
-      var nrOfLevels := Integer(fLevelDatFiles.Objects[ix]); // retrieve nr of levels from stringlist
-      for var i := 0 to nrOfLevels - 1 do begin
+    for levelfile in fLevelDATFiles do begin
+      nrOfLevels := Integer(fLevelDatFiles.Objects[ix]); // retrieve nr of levels from stringlist
+      for i := 0 to nrOfLevels - 1 do begin
         templevelList.Add(TAnalyzedEntry.Create(currentSectionIndex, currentLevelIndex, i, False, levelfile));
         Inc(currentLevelIndex);
         if currentLevelIndex >= levelsPerSection then begin
@@ -352,7 +363,7 @@ begin
     end;
 
     // now distribute the raw LVL files.
-    for var lvlFile in fLevelLVLFiles do begin
+    for lvlFile in fLevelLVLFiles do begin
       templevelList.Add(TAnalyzedEntry.Create(currentSectionIndex, currentLevelIndex, 0, True, lvlFile));
       Inc(currentLevelIndex);
       if currentLevelIndex >= levelsPerSection then begin
@@ -375,7 +386,7 @@ begin
     // now add sections and levels
     section := TSection.Create(Self); // first section
     section.SectionName := sectionNames[0];
-    for var entry: TAnalyzedEntry in templevelList do begin
+    for entry in templevelList do begin
 
 //      log([entry.SectionIndex, entry.LevelIndex, entry.DosDatIndex, entry.FileName, entry.IsRawLVL]);
       if entry.SectionIndex > SectionList.Last.SectionIndex then begin
@@ -389,11 +400,11 @@ begin
       levelinfo.IsRawLVLFile := entry.IsRawLVL;
       levelinfo.UseOddTable := False;
       levelinfo.OddTableIndex := -1;
-      if musicFilenames.Length > 0 then begin
+      if musicFilenames.Count > 0 then begin
         levelinfo.MusicFileName := musicFilenames[musicIndex];
       end;
       Inc(musicIndex);
-      if musicIndex >= musicFilenames.Length then
+      if musicIndex >= musicFilenames.Count then
         musicIndex := 0;
 
     end;
@@ -447,34 +458,41 @@ const
   sectionNames: array[0..3] of string = ('Fun', 'Tricky', 'Taxing', 'Mayhem'); // we use the original sectionnames
 var
   path, filename: string;
-  iniFiles: TArray<string>;
+  iniFiles: TStringList;
   levelsPerSection: Integer;
   modulo: Integer;
   currentSectionIndex, currentLevelIndex: Integer;
   section: TSection;
   levelInfo: TLevelLoadingInformation;
+  i: Integer;
 begin
   path := Style.RootPath;
 
+  {
   var fileFilter: TDirectory.TFilterPredicate :=
     function(const Path: string; const SearchRec: TSearchRec): Boolean
     begin
       Result := string(SearchRec.Name).ToLower <> 'levelpack.ini';
     end;
-
   iniFiles := TDirectory.GetFiles(path, '*.ini', fileFilter);
+  }
+  iniFiles := FindAllFiles(path, '*.ini');
+  for i := iniFiles.Count - 1 downto 0 do begin
+    if iniFiles[i] = 'levelpack.ini' then
+      iniFiles.Delete(I);
+    end;
   iniFiles.Sort;
-  if iniFiles.Length = 0 then
+  if iniFiles.Count = 0 then
     Exit;
 
-  modulo := iniFiles.Length mod 4;
+  modulo := iniFiles.Count mod 4;
 
-  if iniFiles.Length >= 40 then
-    levelsPerSection := iniFiles.Length div 4
+  if iniFiles.Count >= 40 then
+    levelsPerSection := iniFiles.Count div 4
   else
     levelsPerSection := 10;
-  if levelsPerSection > iniFiles.Length then
-    levelsPerSection := iniFiles.Length;
+  if levelsPerSection > iniFiles.Count then
+    levelsPerSection := iniFiles.Count;
 
   section := TSection.Create(Self); // first section
   section.SectionName := sectionNames[0];

@@ -30,8 +30,10 @@ begin
 end;
 
 class procedure TStyleFactory.Done;
+var
+  s: TStyle;
 begin
-  for var s: TStyle in StylePool.Values do
+  for s in StylePool.Values do
     s.IsPooledByFactory := False;
   StylePool.Free;
 end;

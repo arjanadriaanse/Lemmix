@@ -10,7 +10,7 @@ interface
 uses
   LCLIntf, LMessages,
   Types, Classes, SysUtils, TypInfo, IniFiles, Math, Contnrs, Generics.Collections,
-  Rtti, //System.IOUtils,
+  Rtti, FileUtil,
   Forms, Graphics, Controls,
   GR32, GR32_LowLevel;
 
@@ -43,11 +43,9 @@ const
   Bit14 = 1 shl 14;  // 16384
   Bit15 = 1 shl 15;  // 32768
 
-{
 // file stuff
 function ForceDir(const aFileName: string): Boolean;
 function GetFileSize(const aFilename: string): Int64;
-}
 
 // string stuff
 function LeadZeroStr(const i, zeros: Integer): string; inline;
@@ -257,7 +255,6 @@ begin
     get_caller_frame(get_frame);
 end;
 
-{
 function ForceDir(const aFileName: string): Boolean;
 // force path for filename
 var
@@ -268,15 +265,9 @@ begin
 end;
 
 function GetFileSize(const aFilename: String): Int64;
-  var
-    info: TWin32FileAttributeData;
 begin
-  result := -1;
-  if not GetFileAttributesEx(PWideChar(aFileName), GetFileExInfoStandard, @info) then
-    Exit;
-  result := Int64(info.nFileSizeLow) or Int64(info.nFileSizeHigh shl 32);
+  Result := FileUtil.FileSize(aFilename);
 end;
-}
 
 function LeadZeroStr(const i, zeros: Integer): string; inline;
 begin
