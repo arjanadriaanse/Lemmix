@@ -170,14 +170,14 @@ type
     function GetEnumerator: TEnumerator; inline;
     function ValidIndex(ix: Integer): Boolean; inline;
     procedure CheckIndex(aIndex: Integer);
-    function GetItem(aIndex: Integer): T; inline;
+    //function GetItem(aIndex: Integer): T; inline;
     function First: T; inline;
     function Last: T; inline;
     function FirstOrDefault: T; inline;
     function LastOrDefault: T; inline;
     function HasItems: Boolean; inline;
     function IsEmpty: Boolean; inline;
-    property Items[aIndex: Integer]: T read GetItem; default;
+    //property Items[aIndex: Integer]: T read GetItem; default;
   end;
 
   // a very basic helper
@@ -535,11 +535,12 @@ begin
   end;
 end;
 
-function TFastObjectList<T>.GetItem(aIndex: Integer): T;
-begin
-  {$ifdef paranoid} CheckIndex(aIndex); {$endif}
-  Result := Self[aIndex];
-end;
+
+//function TFastObjectList<T>.GetItem(aIndex: Integer): T;
+//begin
+//  {$ifdef paranoid} CheckIndex(aIndex); {$endif}
+//  Result := List[aIndex];
+//end;
 
 function TFastObjectList<T>.First: T;
 begin
