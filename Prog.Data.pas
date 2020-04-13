@@ -47,7 +47,7 @@ implementation
 { TStreamUnZipper }
 
 type
-  TStreamUnZipper = class
+  TStreamUnZipper = class(TUnZipper)
   strict private
     fInput: TStream;
     fOutput: TStream;
@@ -57,21 +57,18 @@ type
     procedure DoDoneStream(Sender: TObject; var AStream: TStream;
       AItem: TFullZipFileEntry);
   public
-    procedure UnZipFile(const filename: string; var aInput, aOutput: TStream);
+    constructor Create(var aInput, aOutput: TStream);
   end;
 
-procedure TStreamUnZipper.UnZipFile(const filename: string; var aInput, aOutput: TStream);
-var
-  zip : TUnZipper;
+constructor TStreamUnZipper.Create(var aInput, aOutput: TStream);
 begin
+  inherited Create;
   fInput := TMemoryStream.Create;
   fInput.CopyFrom(aInput, aInput.Size);
   fOutput := aOutput;
-  zip := TUnZipper.Create();
-  zip.OnOpenInputStream := DoOpenInputStream;
-  zip.OnCreateStream := DoCreateStream;
-  zip.OnDoneStream:= DoDoneStream;
-  zip.UnZipFile(filename);
+  OnOpenInputStream := DoOpenInputStream;
+  OnCreateStream := DoCreateStream;
+  OnDoneStream:= DoDoneStream;
 end;
 
 procedure TStreamUnZipper.DoOpenInputStream(Sender: TObject; var AStream: TStream);
@@ -135,11 +132,11 @@ var
         input.CopyFrom(res, res.Size);
         input.Position := 0;
         output := TMemoryStream.Create;
-        zip := TStreamUnZipper.Create;
+        zip := TStreamUnZipper.Create(input, output);
         try
           //if zip.IndexOf(internalname) < 0 then
           //  Throw('File not found in zip-resource: ' + internalname, method + 'LoadFromZipResource');
-          zip.UnZipFile(internalname, input, output);
+          zip.UnZipFile(internalname);
           output.Position := 0;
           Result := TBytesStream.Create;
           Result.CopyFrom(output, output.Size);
