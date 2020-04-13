@@ -23,7 +23,6 @@ type
     Music                  // game music, style dependant
   );
 
-type
   // quite a complicated bussiness
   TData = class sealed
   strict private
@@ -44,6 +43,56 @@ type
   end;
 
 implementation
+
+{ TStreamUnZipper }
+
+type
+  TStreamUnZipper = class
+  strict private
+    fInput: TStream;
+    fOutput: TStream;
+    procedure DoOpenInputStream(Sender: TObject; var AStream: TStream);
+    procedure DoCreateStream(Sender: TObject; var AStream: TStream;
+      AItem: TFullZipFileEntry);
+    procedure DoDoneStream(Sender: TObject; var AStream: TStream;
+      AItem: TFullZipFileEntry);
+  public
+    procedure UnZipFile(const filename: string; var aInput, aOutput: TStream);
+  end;
+
+procedure TStreamUnZipper.UnZipFile(const filename: string; var aInput, aOutput: TStream);
+var
+  zip : TUnZipper;
+begin
+  fInput := TMemoryStream.Create;
+  fInput.CopyFrom(aInput, aInput.Size);
+  fOutput := aOutput;
+  zip := TUnZipper.Create();
+  zip.OnOpenInputStream := DoOpenInputStream;
+  zip.OnCreateStream := DoCreateStream;
+  zip.OnDoneStream:= DoDoneStream;
+  zip.UnZipFile(filename);
+end;
+
+procedure TStreamUnZipper.DoOpenInputStream(Sender: TObject; var AStream: TStream);
+begin
+  AStream := fInput;
+  Astream.Position := 0;
+end;
+
+procedure TStreamUnZipper.DoCreateStream(Sender: TObject; var AStream: TStream;
+  AItem: TFullZipFileEntry);
+begin
+  AStream := TMemoryStream.Create;
+end;
+
+procedure TStreamUnZipper.DoDoneStream(Sender: TObject; var AStream: TStream;
+  AItem: TFullZipFileEntry);
+begin
+  AStream.Position := 0;
+  fOutput.CopyFrom(AStream, AStream.Size);
+  AStream.Free;
+end;
 
 { TData }
 
@@ -75,32 +124,33 @@ var
     procedure LoadFromZipResource(const aResName: string);
     var
       res: TResourceStream;
-      str: TBytesStream;
-      zip: TInflater;
-      //bytes: SysUtils.TBytes;
-      //internalname: string;
+      input, output: TStream;
+      zip: TStreamUnZipper;
+      internalname: string;
     begin
-      //internalname := ExtractFileName(RealName); // no pathinfo in zip
+      internalname := ExtractFileName(RealName); // no pathinfo in zip
       res := TResourceStream.Create(HINSTANCE, aResName, RT_RCDATA);
       try
-        str := TBytesStream.Create;
-        str.CopyFrom(res, res.Size);
-        str.Position := 0;
-        Result := TBytesStream.Create;
-        zip := TInflater.Create(str, Result, 1024);
-        zip.DeCompress;
+        input := TMemoryStream.Create;
+        input.CopyFrom(res, res.Size);
+        input.Position := 0;
+        output := TMemoryStream.Create;
+        zip := TStreamUnZipper.Create;
         try
           //if zip.IndexOf(internalname) < 0 then
           //  Throw('File not found in zip-resource: ' + internalname, method + 'LoadFromZipResource');
-          //zip.
-          // the stream copies the bytes
-          //Result := TBytesStream.Create(bytes); // 'global' result
+          zip.UnZipFile(internalname, input, output);
+          output.Position := 0;
+          Result := TBytesStream.Create;
+          Result.CopyFrom(output, output.Size);
+          Result.Position := 0;
         finally
           zip.Free;
-          str.Free;
         end;
       finally
         res.Free;
+        input.Free;
+        output.Free;
       end;
     end;
 
