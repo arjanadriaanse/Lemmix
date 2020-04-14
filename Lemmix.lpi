@@ -22,16 +22,14 @@
       <Version Value="2"/>
     </PublishOptions>
     <RunParams>
-      <local>
-        <Display Use="True" Value=":1"/>
-      </local>
       <FormatVersion Value="2"/>
-      <Modes Count="1">
-        <Mode0 Name="default">
+      <Modes Count="2">
+        <Mode0 Name="default"/>
+        <Mode1 Name="display:1">
           <local>
             <Display Use="True" Value=":1"/>
           </local>
-        </Mode0>
+        </Mode1>
       </Modes>
     </RunParams>
     <RequiredPackages Count="1">
