@@ -480,6 +480,7 @@ var
   i: Integer;
 begin
   S := Percentage(Max, Num).ToString + '%';
+  S := S.PadRight(5);
   // todo: optional real number lemstrings
   for i := 1 to 5 do
     fNewDrawStr[26 + i] := S[i];
