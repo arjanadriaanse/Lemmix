@@ -10,7 +10,7 @@ interface
 uses
   LCLIntf, LMessages,
   Types, Classes, SysUtils, TypInfo, IniFiles, Math, Contnrs, Generics.Collections,
-  Rtti, FileUtil, BaseUnix, Unix,
+  Rtti, FileUtil, BaseUnix, Unix, DateUtils,
   Forms, Graphics, Controls,
   GR32, GR32_LowLevel;
 
@@ -458,20 +458,17 @@ begin
 end;
 
 function QueryTimer: Int64;
-var
-  Counter: TTimeVal;
 begin
-  FPGetTimeOfDay(@Counter, nil);
-  Result := Int64(Counter.tv_sec) * 1000000000 + Int64(Counter.tv_usec) * 1000;
+  Result := MilliSecondsBetween(Now, 0);
 end;
 
 function MSBetween(const T1, T2: Int64): Int64;
 // returns the difference in milliseconds between 2 values, calculated with QueryTimer
 begin
   if T2 > T1 then
-    Result := Trunc(1000 * ((T2 - T1) / _Freq))
+    Result := Trunc((T2 - T1) / _Freq)
   else
-    Result := Trunc(1000 * ((T1 - T2) / _Freq))
+    Result := Trunc((T1 - T2) / _Freq)
 end;
 
 { TTicker }
@@ -484,7 +481,7 @@ end;
 
 function TTicker.Check(const aCurrentTick: Int64): Boolean;
 begin
-  Result := (aCurrentTick > fLastTick) and (Trunc(1000 * ((aCurrentTick - fLastTick) / _Freq)) >= fInterval);
+  Result := (aCurrentTick > fLastTick) and (Trunc((aCurrentTick - fLastTick) / _Freq) >= fInterval);
 end;
 
 { TDisplayInfo }
@@ -751,6 +748,7 @@ end;
 
 initialization
   CurrentDisplay.fDpiScale := 1.0;
+  _Freq := 1;
   //QueryPerformanceFrequency(_Freq);
 //finalization
   //FinalizeLemmix;
