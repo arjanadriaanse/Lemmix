@@ -79,6 +79,7 @@ begin
   fGrid.Parent := Self;
   fGrid.Align := alClient;
   //fGrid.AlignWithMargins := True;
+  fGrid.Width := Width;
   fGrid.ColCount := (fGrid.Width - Scale(24)) div Scale(320);
   fGrid.ScrollBars := ssNone;
   fGrid.RowCount := Consts.StyleInformationlist.Count div fGrid.ColCount;
