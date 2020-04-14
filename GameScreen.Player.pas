@@ -651,8 +651,8 @@ begin
   bmpColor := TData.CreateCursorBitmap(Consts.StyleName, Consts.FilenameCursorDefault);
   bmpMask  := TData.CreateCursorBitmap(Consts.StyleName, Consts.FilenameCursorDefaultMask);
 
-  ScaleBmp(bmpMask, DisplayScale);
-  ScaleBmp(bmpColor, DisplayScale);
+  //ScaleBmp(bmpMask, DisplayScale);
+  //ScaleBmp(bmpColor, DisplayScale);
 
   LemCursorIconInfo.fIcon := false;
   LemCursorIconInfo.xHotspot := 7 * DisplayScale;
@@ -673,8 +673,8 @@ begin
   bmpColor := TData.CreateCursorBitmap(Consts.StyleName, Consts.FilenameCursorHighlight);
   bmpMask  := TData.CreateCursorBitmap(Consts.StyleName, Consts.FilenameCursorHighlightMask);
 
-  scalebmp(bmpmask, DisplayScale);
-  scalebmp(bmpcolor, DisplayScale);
+  //scalebmp(bmpmask, DisplayScale);
+  //scalebmp(bmpcolor, DisplayScale);
 
   LemSelCursorIconInfo.fIcon := false;
   LemSelCursorIconInfo.xHotspot := 7 * DisplayScale;
