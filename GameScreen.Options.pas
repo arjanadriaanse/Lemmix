@@ -20,9 +20,9 @@ type
   TGameScreenOptions = class(TBaseDosForm)
   public
     const
-      COLOR_DOS = TColor($483D8B); //clWebDarkSlateBlue;
-      COLOR_CUSTOM = TColor($556B2F); //clWebDarkOliveGreen;
-      COLOR_LEMMINI = TColor($A52A2A); //clWebBrown;
+      COLOR_DOS = TColor($8B3D48); //clWebDarkSlateBlue;
+      COLOR_CUSTOM = TColor($2F6B55); //clWebDarkOliveGreen;
+      COLOR_LEMMINI = TColor($2A2AA5); //clWebBrown;
   private
     fGrid: TDrawGrid;
     procedure Form_KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
