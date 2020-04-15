@@ -14,7 +14,7 @@ interface
 uses
   LCLIntf, LCLType, LMessages,
   UITypes, SysUtils, Classes,
-  Graphics, Controls, Forms, Dialogs, ExtCtrls, StdCtrls,
+  Graphics, Controls, Forms, Dialogs, ExtCtrls, StdCtrls, Character,
   Base.Utils, Base.Bitmaps,
   Form.Base, Form.Message,
   Dos.Compression, Dos.Structures,
@@ -301,7 +301,7 @@ begin
   if aFilename.Trim.IsEmpty then
     Exit;
 
-  ext := ExtractFileExt(aFilename);
+  ext := ToUpper(ExtractFileExt(aFilename));
   if ext = '' then begin
     Result := CheckLoadHashcode(aFilename);
     if Assigned(Result) then
