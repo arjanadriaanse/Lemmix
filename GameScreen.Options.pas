@@ -252,7 +252,7 @@ begin
 
   // style
   canv.Font := Self.Font;
-  canv.Font.Size := Scale(15);
+  canv.Font.Height := Scale(20);
   canv.Font.Color := clWhite;//myColor;
   canv.Font.Style := [fsBold];
 
@@ -270,11 +270,11 @@ begin
   else
     txt := information.name;//canv.TextOut(x, y, information.Name);
 
-  canv.TextRect(txtRect, 0, 0, txt, style);
+  canv.TextRect(txtRect, txtRect.Left, txtRect.Top, txt, style);
 
   // number of levels + author
 //  canv.Font.Color := clYellow;
-  canv.Font.Size := Scale(9);
+  canv.Font.Height := Scale(12);
   canv.Font.Style := [];
   th := canv.TextHeight('Wq');
   txtRect.Offset(0, txtRect.Height + Scale(4));
@@ -286,7 +286,7 @@ begin
   else
     txt := numberOfLevels.ToString + ' level' + plural + ' by ' + information.Author;
 
-  canv.TextRect(txtRect, 0, 0, txt, style);
+  canv.TextRect(txtRect, txtRect.Left, txtRect.Top, txt, style);
 
   // location
   th := canv.TextHeight('Wq');
@@ -300,7 +300,7 @@ begin
     txt := 'Resource';
 
   style.EndEllipsis := True;
-  canv.TextRect(txtRect, 0, 0, txt, style);
+  canv.TextRect(txtRect, txtRect.Left, txtRect.Top, txt, style);
   style.EndEllipsis := False;
 
   canv.Font.Color := GetShadowColor(myColor, 120);//clWhite; //clSilver;
@@ -312,11 +312,12 @@ begin
   txt := information.Info;
   if txt.IsEmpty then txt := 'No info available';
 
+  style.Alignment := taLeftJustify;
   if canv.TextWidth(txt) < txtRect.Width then
     style.Layout := tlBottom
   else
     style.WordBreak := True;
-  canv.TextRect(txtRect, 0, 0, txt, style);
+  canv.TextRect(txtRect, txtRect.Left, txtRect.Top, txt, style);
 end;
 
 end.
