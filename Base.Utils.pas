@@ -10,7 +10,7 @@ interface
 uses
   LCLIntf, LMessages,
   Types, Classes, SysUtils, TypInfo, IniFiles, Math, Contnrs, Generics.Collections,
-  Rtti, FileUtil, BaseUnix, Unix, DateUtils,
+  Rtti, FileUtil, LazUtils,
   Forms, Graphics, Controls,
   GR32, GR32_LowLevel;
 
@@ -459,16 +459,16 @@ end;
 
 function QueryTimer: Int64;
 begin
-  Result := MilliSecondsBetween(Now, 0);
+  Result := GetTickCount64;
 end;
 
 function MSBetween(const T1, T2: Int64): Int64;
 // returns the difference in milliseconds between 2 values, calculated with QueryTimer
 begin
   if T2 > T1 then
-    Result := Trunc((T2 - T1) / _Freq)
+    Result := Trunc(1000 * ((T2 - T1) / _Freq))
   else
-    Result := Trunc((T1 - T2) / _Freq)
+    Result := Trunc(1000 * ((T1 - T2) / _Freq))
 end;
 
 { TTicker }
@@ -481,7 +481,7 @@ end;
 
 function TTicker.Check(const aCurrentTick: Int64): Boolean;
 begin
-  Result := (aCurrentTick > fLastTick) and (Trunc((aCurrentTick - fLastTick) / _Freq) >= fInterval);
+  Result := (aCurrentTick > fLastTick) and (Trunc(1000 * ((aCurrentTick - fLastTick) / _Freq)) >= fInterval);
 end;
 
 { TDisplayInfo }
@@ -748,8 +748,7 @@ end;
 
 initialization
   CurrentDisplay.fDpiScale := 1.0;
-  _Freq := 1;
-  //QueryPerformanceFrequency(_Freq);
+  _Freq := 1000
 //finalization
   //FinalizeLemmix;
 end.

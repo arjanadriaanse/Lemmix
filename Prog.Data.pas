@@ -5,7 +5,7 @@ unit Prog.Data;
 interface
 
 uses
-  LCLIntf,
+  LCLIntf, {$ifdef windows} Windows, {$endif}
   Classes, SysUtils, Contnrs, Zipper, Generics.Collections,
   Graphics, //Vcl.Imaging.PngImage,
   Base.Utils,
